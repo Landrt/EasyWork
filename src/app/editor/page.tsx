@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/lib/api';
+import { TEMPLATES, getTemplateComponent } from '@/components/templates';
 
 // Mock cv ID - in production this comes from the URL params
 const MOCK_CV_ID = 1;
@@ -19,8 +20,7 @@ const EditorPage = () => {
 
   // Template States
   const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [templates, setTemplates] = useState<{id: string, name: string, url: string}[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>('modern');
 
   // Editor States
   const [editingSection, setEditingSection] = useState<string | null>(null);
@@ -56,20 +56,7 @@ const EditorPage = () => {
     }
   }, []);
 
-  const fetchTemplates = async () => {
-    try {
-      const res = await fetch('/api/templates');
-      const data = await res.json();
-      if (data.templates) {
-        setTemplates(data.templates);
-      }
-    } catch (e) {
-      console.error('Failed to load templates', e);
-    }
-  };
-
   const openTemplateModal = () => {
-    fetchTemplates();
     setShowTemplateModal(true);
   };
 
@@ -110,14 +97,41 @@ const EditorPage = () => {
     setSuggestions(prev => prev.map(s => s.id === id ? { ...s, dismissed: true } : s));
   };
 
-  const handleExport = () => {
-    setExportStatus('Préparation du PDF...');
-    // Open print dialog — the browser generates the PDF from the CV preview
-    setTimeout(() => {
-      window.print();
-      setExportStatus('✓ Utilisez "Enregistrer en PDF" dans la fenêtre d\'impression.');
-      setTimeout(() => setExportStatus(null), 6000);
-    }, 200);
+  const handleExport = async () => {
+    setExportStatus('Génération du PDF de haute qualité par l\'IA...');
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          template: selectedTemplate || 'modern',
+          cvData: cvData
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération du PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CV_${cvData.header.name.replace(/\\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setExportStatus('✓ PDF téléchargé avec succès !');
+    } catch (error) {
+      console.error(error);
+      setExportStatus('❌ Erreur lors de l\'export. Réessayez.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 5000);
+    }
   };
 
   return (
@@ -313,71 +327,19 @@ const EditorPage = () => {
           </div>
 
           {/* The CV Document Preview */}
-          <div className="cv-page bg-on-primary w-full max-w-[794px] h-fit p-12 relative" style={{
+          <div className="cv-page bg-on-primary w-full max-w-[794px] min-h-[1123px] relative flex shadow-md overflow-hidden" style={{
             transform: `scale(${zoom/100})`, 
-            transformOrigin: 'top center',
-            backgroundImage: selectedTemplate ? `url(${selectedTemplate})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            minHeight: '1123px' // A4 height at 794px width
+            transformOrigin: 'top center'
           }}>
             {/* Active Section Highlight Overlay (simulated) */}
-            <div className="absolute top-[180px] left-8 right-8 h-[240px] border border-clay-accent bg-clay-accent/5 rounded pointer-events-none z-10"></div>
+            <div className="absolute top-[180px] left-8 right-8 h-[240px] border border-clay-accent bg-clay-accent/5 rounded pointer-events-none z-10 hidden"></div>
             
-            {/* CV Content */}
-            <div className="border-b border-ink pb-6 mb-8 text-center relative z-0">
-              <h1 className="text-display-lg font-display-lg text-ink mb-2">{cvData.header.name}</h1>
-              <p className="text-body-lg font-body-lg text-on-surface-variant uppercase tracking-widest">{cvData.header.title}</p>
-              <div className="flex justify-center gap-4 mt-4 text-caption font-caption text-on-surface-variant">
-                <span>{cvData.header.location}</span> •
-                <span>{cvData.header.email}</span> •
-                <span>{cvData.header.phone}</span>
-              </div>
+            {/* CV Content rendered by the selected template component */}
+            <div className="w-full relative z-0 flex print:w-[794px] print:h-[1123px]">
+               {React.createElement(getTemplateComponent(selectedTemplate), { data: cvData })}
             </div>
+          </div>
 
-            <div className="mb-8 relative z-0">
-              <h2 className="text-headline-md font-headline-md text-ink mb-4 border-b border-parchment-border pb-2 uppercase tracking-wide text-sm">Expérience Professionnelle</h2>
-              {cvData.experience.map((exp: any) => (
-                <div key={exp.id} className="mb-6">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h3 className="text-label-md font-label-md text-ink font-bold text-lg">{exp.title}</h3>
-                    <span className="text-caption font-caption text-on-surface-variant italic">{exp.dates}</span>
-                  </div>
-                  <p className="text-body-md font-body-md text-on-surface-variant mb-2">{exp.company} • {exp.location}</p>
-                  <ul className="list-disc pl-5 text-body-md font-body-md text-on-surface-variant space-y-1">
-                    {exp.highlights.map((highlight: string, i: number) => (
-                      <li key={i}>{highlight}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className="mb-8">
-              <h2 className="text-headline-md font-headline-md text-ink mb-4 border-b border-parchment-border pb-2 uppercase tracking-wide text-sm">Formation</h2>
-              {cvData.education.map((edu: any) => (
-                <div key={edu.id} className="mb-4">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="text-label-md font-label-md text-ink font-bold">{edu.degree}</h3>
-                    <span className="text-caption font-caption text-on-surface-variant italic">{edu.dates}</span>
-                  </div>
-                  <p className="text-body-md font-body-md text-on-surface-variant">{edu.school}</p>
-                </div>
-              ))}
-            </div>
-
-            {cvData.skills && cvData.skills.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-headline-md font-headline-md text-ink mb-4 border-b border-parchment-border pb-2 uppercase tracking-wide text-sm">Compétences</h2>
-                <div className="flex flex-wrap gap-2">
-                  {cvData.skills.map((skill: string, i: number) => (
-                    <span key={i} className="px-3 py-1 bg-surface-container-high border border-parchment-border rounded-full text-label-md font-label-md text-ink">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </section>
 
@@ -451,24 +413,23 @@ const EditorPage = () => {
               </button>
             </div>
             <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {templates.length === 0 ? (
+              {TEMPLATES.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-on-surface-variant flex flex-col items-center gap-4">
                   <span className="material-symbols-outlined text-[48px] opacity-50">imagesmode</span>
-                  <p>Aucun template Canva trouvé dans le dossier public/templates.</p>
-                  <p className="text-caption">Ajoutez des images (.png, .jpg) exportées depuis Canva dans ce dossier pour les utiliser.</p>
+                  <p>Aucun template React trouvé.</p>
                 </div>
               ) : (
-                templates.map(template => (
+                TEMPLATES.map(template => (
                   <div 
                     key={template.id} 
-                    className={`cursor-pointer group rounded overflow-hidden border-2 transition-all ${selectedTemplate === template.url ? 'border-primary ring-4 ring-primary/20' : 'border-parchment-border hover:border-clay-accent'}`}
+                    className={`cursor-pointer group rounded overflow-hidden border-2 transition-all ${selectedTemplate === template.id ? 'border-primary ring-4 ring-primary/20' : 'border-parchment-border hover:border-clay-accent'}`}
                     onClick={() => {
-                      setSelectedTemplate(template.url);
+                      setSelectedTemplate(template.id);
                       setShowTemplateModal(false);
                     }}
                   >
-                    <div className="aspect-[1/1.414] bg-surface-container-high w-full relative">
-                      <img src={template.url} alt={template.name} className="w-full h-full object-cover" />
+                    <div className="aspect-[1/1.414] bg-surface-container-high w-full relative flex items-center justify-center p-4">
+                      <span className="text-on-surface-variant text-center font-serif opacity-50">{template.name}</span>
                     </div>
                     <div className="p-3 bg-surface text-center border-t border-parchment-border group-hover:bg-surface-container-low transition-colors">
                       <p className="text-label-sm font-label-sm uppercase tracking-wide truncate">{template.name}</p>

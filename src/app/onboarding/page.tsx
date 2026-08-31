@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Answer {
   question: string;
@@ -31,8 +31,12 @@ const FIRST_QUESTION: AIQuestion = {
   placeholder: null
 };
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const cvId = searchParams.get('cvId');
+  const template = searchParams.get('template');
+  
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<AIQuestion>(FIRST_QUESTION);
   const [selectedAnswer, setSelectedAnswer] = useState('');
@@ -43,6 +47,14 @@ export default function OnboardingPage() {
 
   const currentStep = answers.length + 1;
   const progressPct = Math.min((answers.length / totalSteps) * 100, 90);
+
+  const navigateToEditor = () => {
+    if (cvId) {
+      router.push(`/editor?cvId=${cvId}&template=${template || 'modern'}`);
+    } else {
+      router.push('/editor');
+    }
+  };
 
   const fetchNextQuestion = async (updatedAnswers: Answer[]) => {
     setLoadingNext(true);
@@ -58,9 +70,8 @@ export default function OnboardingPage() {
       if (!res.ok) throw new Error((data as any).error || 'Erreur IA');
 
       if (data.done) {
-        // Save all answers to sessionStorage for later use
         sessionStorage.setItem('onboardingAnswers', JSON.stringify(updatedAnswers));
-        router.push('/import');
+        navigateToEditor();
       } else {
         setCurrentQuestion(data);
         setSelectedAnswer('');
@@ -89,7 +100,7 @@ export default function OnboardingPage() {
 
   const handleSkip = () => {
     sessionStorage.setItem('onboardingAnswers', JSON.stringify(answers));
-    router.push('/import');
+    navigateToEditor();
   };
 
   return (
@@ -222,5 +233,13 @@ export default function OnboardingPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-on-surface-variant">Chargement...</div>}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

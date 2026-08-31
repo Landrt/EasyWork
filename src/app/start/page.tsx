@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApi } from '@/lib/api';
+import { TEMPLATES } from '@/components/templates';
 
 export default function StartPage() {
   const router = useRouter();
@@ -11,14 +12,6 @@ export default function StartPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [templates, setTemplates] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetch('/api/templates')
-      .then(res => res.json())
-      .then(data => setTemplates(data.templates || []))
-      .catch(err => console.error("Error fetching templates:", err));
-  }, []);
 
   const handleCreateCv = async () => {
     if (!selectedTemplate) return;
@@ -85,48 +78,28 @@ export default function StartPage() {
       {/* Main Content */}
       <main className="flex-grow w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-24">
         <div className="text-center mb-16">
-          <h1 className="text-display-lg font-display-lg text-ink mb-4">Comment souhaitez-vous commencer ?</h1>
-          <p className="text-body-lg font-body-lg text-on-surface-variant max-w-2xl mx-auto">Choisissez un modèle professionnel ou importez un document existant pour structurer votre parcours avec précision et autorité.</p>
+          <h1 className="text-display-lg font-display-lg text-ink mb-4">Choisissez un modèle de CV</h1>
+          <p className="text-body-lg font-body-lg text-on-surface-variant max-w-2xl mx-auto">Sélectionnez un modèle professionnel pour structurer votre parcours avec précision et autorité.</p>
         </div>
 
-        {/* Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-
-          {/* Import Option */}
-          <div
-            className="bg-surface border border-parchment-border rounded hover:border-clay-accent transition-colors duration-300 p-8 flex flex-col items-center justify-center text-center cursor-pointer group"
-            onClick={() => router.push('/import')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={e => { if (e.key === 'Enter') router.push('/import'); }}
-          >
-            <div className="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mb-6 group-hover:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-3xl text-ink">upload_file</span>
-            </div>
-            <h2 className="text-headline-md font-headline-md text-ink mb-2">Importer un document</h2>
-            <p className="text-body-md font-body-md text-on-surface-variant mb-6">Mettez à jour un CV existant. Notre IA analysera et extraira vos données pour les structurer selon les standards ATS.</p>
-            <span className="px-6 py-3 bg-transparent border border-clay-accent text-ink text-label-sm font-label-sm uppercase rounded group-hover:bg-surface-container-lowest transition-colors">
-              Importer PDF / Word
-            </span>
-          </div>
-
-          {/* Template Gallery */}
-          <div className="bg-surface border border-parchment-border rounded p-8 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-6">
+        {/* Template Gallery Full Width */}
+        <div className="max-w-5xl mx-auto mb-16">
+          <div className="bg-surface border border-parchment-border rounded p-8 flex flex-col">
+            <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-headline-md font-headline-md text-ink mb-1">Galerie de modèles</h2>
                 <p className="text-body-md font-body-md text-on-surface-variant">
                   {selectedTemplate
-                    ? `Modèle sélectionné : ${templates.find(t => t.id === selectedTemplate)?.name || selectedTemplate}`
+                    ? `Modèle sélectionné : ${TEMPLATES.find(t => t.id === selectedTemplate)?.name || selectedTemplate}`
                     : "Cliquez sur un modèle pour commencer"}
                 </p>
               </div>
-              <span className="material-symbols-outlined text-on-surface-variant">grid_view</span>
+              <span className="material-symbols-outlined text-on-surface-variant text-[32px]">grid_view</span>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar mb-6">
-              {templates.length > 0 ? (
-                templates.map(tpl => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar mb-8">
+              {TEMPLATES.length > 0 ? (
+                TEMPLATES.map(tpl => (
                   <button
                     key={tpl.id}
                     className={"relative group border-2 rounded overflow-hidden template-card w-full text-left" + (selectedTemplate === tpl.id ? ' selected' : ' border-parchment-border')}
@@ -134,43 +107,48 @@ export default function StartPage() {
                     disabled={creating}
                     aria-label={`Sélectionner le modèle ${tpl.name}`}
                   >
-                    <img className="w-full h-auto object-cover group-hover:opacity-90 transition-opacity aspect-[21/29]" alt={tpl.name} src={tpl.url} />
+                    {/* Placeholder div while we don't have proper thumbnails for all templates */}
+                    <div className="w-full h-auto aspect-[21/29] bg-surface-container flex items-center justify-center p-4">
+                      <span className="text-on-surface-variant text-center font-serif opacity-50">{tpl.name}</span>
+                    </div>
                     <div className={"absolute inset-0 transition-colors flex items-center justify-center" + (selectedTemplate === tpl.id ? ' bg-ink/30' : ' bg-ink/0 group-hover:bg-ink/40')}>
                       <span className={"text-on-primary text-label-sm font-label-sm uppercase tracking-wider bg-ink px-4 py-2 rounded transition-opacity" + (selectedTemplate === tpl.id ? ' opacity-100' : ' opacity-0 group-hover:opacity-100')}>
                         {selectedTemplate === tpl.id ? '✓ Sélectionné' : 'Sélectionner'}
                       </span>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 bg-surface/90 border-t border-parchment-border px-3 py-2">
-                      <p className="text-label-sm font-label-sm text-ink truncate">{tpl.name}</p>
+                      <p className="text-label-sm font-label-sm text-ink truncate text-center">{tpl.name}</p>
                     </div>
                   </button>
                 ))
               ) : (
-                <div className="col-span-2 lg:col-span-3 py-12 text-center text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[32px] mb-2 opacity-50">imagesmode</span>
-                  <p>Aucun modèle trouvé dans le dossier templates.</p>
+                <div className="col-span-2 md:col-span-3 lg:col-span-4 py-20 text-center text-on-surface-variant border border-dashed border-parchment-border rounded">
+                  <span className="material-symbols-outlined text-[48px] mb-4 opacity-50">imagesmode</span>
+                  <p className="text-body-lg font-body-lg">Aucun modèle trouvé dans le dossier templates.</p>
                 </div>
               )}
             </div>
 
             {/* CTA button below the gallery */}
-            <button
-              className="w-full py-3 px-6 bg-success-green text-on-primary text-label-md font-label-md uppercase rounded hover:bg-tertiary-container transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-              disabled={!selectedTemplate || creating}
-              onClick={handleCreateCv}
-            >
-              {creating ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                  Création en cours...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  {selectedTemplate ? `Continuer avec ${templates.find(t => t.id === selectedTemplate)?.name || selectedTemplate}` : 'Sélectionnez un modèle'}
-                </>
-              )}
-            </button>
+            <div className="flex justify-center border-t border-parchment-border pt-8 mt-auto">
+              <button
+                className="w-full max-w-md py-4 px-6 bg-success-green text-on-primary text-label-lg font-label-lg uppercase rounded hover:bg-tertiary-container transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                disabled={!selectedTemplate || creating}
+                onClick={handleCreateCv}
+              >
+                {creating ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
+                    Création en cours...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[24px]">arrow_forward</span>
+                    {selectedTemplate ? `Continuer avec ${TEMPLATES.find(t => t.id === selectedTemplate)?.name || selectedTemplate}` : 'Sélectionnez un modèle'}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </main>

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import candidate_intelligence, qro, cvs, jobs, ats_ai, subscription, affiliate, account
+from app.api.v1 import candidate_intelligence, qro, cvs, jobs, ats_ai, subscription, affiliate, account, export
 from app.core.config import settings
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.include_router(ats_ai.router,                  prefix=f"{settings.API_V1_STR
 app.include_router(subscription.router,            prefix=f"{settings.API_V1_STR}/subscription", tags=["subscription"])
 app.include_router(affiliate.router,               prefix=f"{settings.API_V1_STR}/affiliate",    tags=["affiliate"])
 app.include_router(account.router,                 prefix=f"{settings.API_V1_STR}/account",      tags=["account"])
+app.include_router(export.router,                  prefix=f"{settings.API_V1_STR}/export",       tags=["export"])
 
 
 @app.get("/health")
