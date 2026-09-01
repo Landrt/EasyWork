@@ -102,22 +102,34 @@ export default function StartPage() {
                 TEMPLATES.map(tpl => (
                   <button
                     key={tpl.id}
-                    className={"relative group border-2 rounded overflow-hidden template-card w-full text-left" + (selectedTemplate === tpl.id ? ' selected' : ' border-parchment-border')}
+                    className={"relative group rounded-xl overflow-hidden template-card w-full text-left transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] " + (selectedTemplate === tpl.id ? ' ring-4 ring-ink ring-offset-2 border-transparent' : ' border-2 border-parchment-border hover:border-clay-accent')}
                     onClick={() => setSelectedTemplate(tpl.id)}
                     disabled={creating}
                     aria-label={`Sélectionner le modèle ${tpl.name}`}
                   >
-                    {/* Placeholder div while we don't have proper thumbnails for all templates */}
-                    <div className="w-full h-auto aspect-[21/29] bg-surface-container flex items-center justify-center p-4">
-                      <span className="text-on-surface-variant text-center font-serif opacity-50">{tpl.name}</span>
+                    <div className="w-full h-auto aspect-[21/29] bg-surface-container overflow-hidden">
+                      {tpl.previewUrl ? (
+                        <img 
+                          src={tpl.previewUrl} 
+                          alt={tpl.name}
+                          className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                           <span className="material-symbols-outlined text-[48px] opacity-20 mb-2">article</span>
+                           <span className="text-on-surface-variant text-center font-serif opacity-50">{tpl.name}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className={"absolute inset-0 transition-colors flex items-center justify-center" + (selectedTemplate === tpl.id ? ' bg-ink/30' : ' bg-ink/0 group-hover:bg-ink/40')}>
-                      <span className={"text-on-primary text-label-sm font-label-sm uppercase tracking-wider bg-ink px-4 py-2 rounded transition-opacity" + (selectedTemplate === tpl.id ? ' opacity-100' : ' opacity-0 group-hover:opacity-100')}>
-                        {selectedTemplate === tpl.id ? '✓ Sélectionné' : 'Sélectionner'}
+                    
+                    <div className={"absolute inset-0 transition-all duration-300 flex items-center justify-center " + (selectedTemplate === tpl.id ? ' bg-ink/10' : ' bg-ink/0 group-hover:bg-ink/30')}>
+                      <span className={"text-on-primary text-label-sm font-label-sm uppercase tracking-wider bg-ink px-5 py-2.5 rounded-full shadow-lg transition-all duration-300 transform " + (selectedTemplate === tpl.id ? ' opacity-100 scale-100' : ' opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100')}>
+                        {selectedTemplate === tpl.id ? '✓ Sélectionné' : 'Choisir ce modèle'}
                       </span>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-surface/90 border-t border-parchment-border px-3 py-2">
-                      <p className="text-label-sm font-label-sm text-ink truncate text-center">{tpl.name}</p>
+                    
+                    <div className="absolute bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-parchment-border px-4 py-3 transition-colors group-hover:bg-surface">
+                      <p className="text-label-md font-label-md text-ink truncate text-center">{tpl.name}</p>
                     </div>
                   </button>
                 ))

@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useApi } from '@/lib/api';
 import { TEMPLATES, getTemplateComponent } from '@/components/templates';
 
 // Mock cv ID - in production this comes from the URL params
 const MOCK_CV_ID = 1;
 
-const EditorPage = () => {
+const EditorContent = () => {
+  const searchParams = useSearchParams();
+  const templateFromUrl = searchParams.get('template');
   const { fetch: apiFetch } = useApi();
   const [zoom, setZoom] = useState(100);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
@@ -20,36 +23,87 @@ const EditorPage = () => {
 
   // Template States
   const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>('modern');
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templateFromUrl || 'modern');
 
   // Editor States
   const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [newCustomTitle, setNewCustomTitle] = useState('');
+  const [newCustomColumn, setNewCustomColumn] = useState<'left' | 'main'>('main');
+  
+  const currentTemplateDef = TEMPLATES.find(t => t.id === selectedTemplate) || TEMPLATES[0];
+  const sectionLabels: Record<string, string> = {
+    experience: 'Expérience Professionnelle',
+    education: 'Formation',
+    skills: 'Compétences',
+    languages: 'Langues',
+    interests: "Centres d'intérêt",
+    projects: 'Projets'
+  };
   
   // Mock initial data - should be fetched from backend or session
   const [cvData, setCvData] = useState<any>({
-    header: { name: 'Jean Dupont', title: 'Directeur Marketing Digital', location: 'Paris, France', email: 'jean.dupont@email.com', phone: '+33 6 12 34 56 78' },
-    experience: [],
-    education: [],
-    skills: []
+    header: { 
+      name: 'Prénom Nom', 
+      title: 'Titre de votre profession', 
+      location: 'Ville, Pays', 
+      email: 'contact@email.com', 
+      phone: '+33 6 00 00 00 00',
+      summary: 'Une brève introduction mettant en valeur vos points forts, votre expérience et vos objectifs professionnels. Ce paragraphe est idéal pour attirer l\'attention du recruteur dès les premières secondes de lecture.'
+    },
+    experience: [
+      {
+        id: 'exp1',
+        title: 'Poste précédent ou actuel',
+        company: 'Nom de l\'entreprise',
+        location: 'Ville',
+        dates: 'Mois Année - Présent',
+        highlights: [
+          'Responsabilité principale ou réalisation clé dans ce poste.',
+          'Collaboration avec d\'autres équipes pour atteindre des objectifs.',
+          'Amélioration des processus existants avec des résultats mesurables.'
+        ]
+      }
+    ],
+    education: [
+      {
+        id: 'edu1',
+        degree: 'Diplôme ou Formation (ex: Master en Informatique)',
+        school: 'Nom de l\'école ou de l\'université',
+        dates: '2020 - 2022'
+      }
+    ],
+    skills: ['Compétence 1', 'Compétence 2', 'Compétence 3', 'Compétence 4'],
+    languages: ['Anglais - Courant', 'Espagnol - Intermédiaire'],
+    interests: ['Technologie', 'Photographie', 'Lecture'],
+    projects: [],
+    customSections: []
   });
 
   useEffect(() => {
+    // Check if we have real imported data, otherwise keep placeholders
     const stored = sessionStorage.getItem('importedProfile');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setCvData({
-          header: {
-            name: parsed.name || '',
-            title: parsed.title || 'Titre',
-            location: parsed.location || '',
-            email: parsed.email || '',
-            phone: parsed.phone || ''
-          },
-          experience: parsed.experiences || [],
-          education: parsed.education || [],
-          skills: parsed.skills || []
-        });
+        if (parsed.name || (parsed.experiences && parsed.experiences.length > 0)) {
+          setCvData({
+            header: {
+              name: parsed.name || '',
+              title: parsed.title || 'Titre',
+              location: parsed.location || '',
+              email: parsed.email || '',
+              phone: parsed.phone || '',
+              summary: parsed.summary || ''
+            },
+            experience: parsed.experiences || [],
+            education: parsed.education || [],
+            skills: parsed.skills || [],
+            languages: parsed.languages || [],
+            interests: parsed.interests || [],
+            projects: parsed.projects || [],
+            customSections: parsed.customSections || []
+          });
+        }
       } catch (e) {
         console.error('Failed to parse profile in Editor', e);
       }
@@ -239,7 +293,7 @@ const EditorPage = () => {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {/* Draggable Item 1 */}
+            {/* Header (Always Present) */}
             <div className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-move hover:border-clay-accent transition-colors">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
@@ -252,45 +306,48 @@ const EditorPage = () => {
                 <span className="material-symbols-outlined text-[18px]">edit</span>
               </button>
             </div>
-            {/* Draggable Item 2 */}
-            <div className="group flex items-center justify-between p-3 bg-surface-container-low border border-clay-accent rounded cursor-move shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
-                <div>
-                  <p className="text-label-md font-label-md text-on-surface">Expérience Professionnelle</p>
-                  <p className="text-caption font-caption text-on-surface-variant">3 postes renseignés</p>
+
+            {/* Dynamic Sections */}
+            {['experience', 'education', 'skills', 'languages', 'interests', 'projects'].map(sec => {
+              if (cvData[sec] === null) return null; // Section explicitement supprimée par l'utilisateur
+              if (!currentTemplateDef.supportedSections?.includes(sec) && (!cvData[sec] || cvData[sec].length === 0)) return null;
+              
+              const count = cvData[sec]?.length || 0;
+              return (
+                <div key={sec} className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-move hover:border-clay-accent transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+                    <div>
+                      <p className="text-label-md font-label-md text-on-surface">{sectionLabels[sec]}</p>
+                      <p className="text-caption font-caption text-on-surface-variant">{count} élément{count > 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <button className="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" onClick={() => setEditingSection(sec)}>
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
                 </div>
-              </div>
-              <button className="text-primary transition-opacity hover:opacity-80" onClick={() => setEditingSection('experience')}>
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-              </button>
-            </div>
-            {/* Draggable Item 3 */}
-            <div className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-move hover:border-clay-accent transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
-                <div>
-                  <p className="text-label-md font-label-md text-on-surface">Formation</p>
-                  <p className="text-caption font-caption text-on-surface-variant">2 diplômes</p>
+              );
+            })}
+            
+            {/* Custom Sections */}
+            {cvData.customSections?.map((cSec: any) => {
+              const count = cSec.items?.length || 0;
+              return (
+                <div key={cSec.id} className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-move hover:border-clay-accent transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+                    <div>
+                      <p className="text-label-md font-label-md text-on-surface">{cSec.title}</p>
+                      <p className="text-caption font-caption text-on-surface-variant">{count} élément{count > 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <button className="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" onClick={() => setEditingSection(cSec.id)}>
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
                 </div>
-              </div>
-              <button className="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" onClick={() => setEditingSection('education')}>
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-              </button>
-            </div>
-            {/* Draggable Item 4 */}
-            <div className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-move hover:border-clay-accent transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
-                <div>
-                  <p className="text-label-md font-label-md text-on-surface">Compétences</p>
-                  <p className="text-caption font-caption text-on-surface-variant">Techniques & Soft skills</p>
-                </div>
-              </div>
-              <button className="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" onClick={() => setEditingSection('skills')}>
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-              </button>
-            </div>
+              );
+            })}
+            
             <button className="w-full mt-4 py-3 border border-dashed border-clay-accent rounded text-on-surface-variant hover:text-primary hover:border-primary transition-colors flex justify-center items-center gap-2" onClick={() => setEditingSection('add_new')}>
               <span className="material-symbols-outlined text-[18px]">add_circle</span>
               <span className="text-label-sm font-label-sm uppercase">Ajouter une section</span>
@@ -338,8 +395,6 @@ const EditorPage = () => {
             <div className="w-full relative z-0 flex print:w-[794px] print:h-[1123px]">
                {React.createElement(getTemplateComponent(selectedTemplate), { data: cvData })}
             </div>
-          </div>
-
           </div>
         </section>
 
@@ -407,7 +462,7 @@ const EditorPage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/50 backdrop-blur-sm">
           <div className="bg-surface rounded-lg border border-parchment-border shadow-lg w-full max-w-3xl max-h-[80vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b border-parchment-border flex justify-between items-center bg-surface-container-low">
-              <h2 className="text-headline-md font-headline-md text-ink">Choisir un Template Canva</h2>
+              <h2 className="text-headline-md font-headline-md text-ink">Choisir un modèle de CV</h2>
               <button className="text-on-surface-variant hover:text-primary transition-colors" onClick={() => setShowTemplateModal(false)}>
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -422,16 +477,27 @@ const EditorPage = () => {
                 TEMPLATES.map(template => (
                   <div 
                     key={template.id} 
-                    className={`cursor-pointer group rounded overflow-hidden border-2 transition-all ${selectedTemplate === template.id ? 'border-primary ring-4 ring-primary/20' : 'border-parchment-border hover:border-clay-accent'}`}
+                    className={`cursor-pointer group rounded-xl overflow-hidden border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] ${selectedTemplate === template.id ? 'border-ink ring-4 ring-ink/20' : 'border-parchment-border hover:border-clay-accent'}`}
                     onClick={() => {
                       setSelectedTemplate(template.id);
                       setShowTemplateModal(false);
                     }}
                   >
-                    <div className="aspect-[1/1.414] bg-surface-container-high w-full relative flex items-center justify-center p-4">
-                      <span className="text-on-surface-variant text-center font-serif opacity-50">{template.name}</span>
+                    <div className="aspect-[21/29] bg-surface-container-high w-full relative overflow-hidden">
+                      {template.previewUrl ? (
+                        <img 
+                          src={template.previewUrl} 
+                          alt={template.name}
+                          className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                           <span className="material-symbols-outlined text-[32px] opacity-20 mb-2">article</span>
+                           <span className="text-on-surface-variant text-center font-serif opacity-50 text-sm">{template.name}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="p-3 bg-surface text-center border-t border-parchment-border group-hover:bg-surface-container-low transition-colors">
+                    <div className="p-3 bg-surface text-center border-t border-parchment-border transition-colors group-hover:bg-surface-container-low">
                       <p className="text-label-sm font-label-sm uppercase tracking-wide truncate">{template.name}</p>
                     </div>
                   </div>
@@ -480,6 +546,33 @@ const EditorPage = () => {
                       <input type="text" className="border border-parchment-border rounded p-2 bg-surface text-ink" value={cvData.header.phone} onChange={e => setCvData({...cvData, header: {...cvData.header, phone: e.target.value}})} />
                     </div>
                   </div>
+                  
+                  {TEMPLATES.find(t => t.id === selectedTemplate)?.supportsPhoto && (
+                    <div className="flex flex-col gap-2 mt-2 pt-4 border-t border-parchment-border">
+                      <label className="text-label-sm font-label-sm text-ink uppercase">Photo de profil</label>
+                      <div className="flex items-center gap-4">
+                        {cvData.header.photoUrl ? (
+                          <img src={cvData.header.photoUrl} alt="Profil" className="w-16 h-16 rounded-full object-cover border border-parchment-border" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center border border-parchment-border text-on-surface-variant">
+                            <span className="material-symbols-outlined">person</span>
+                          </div>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-on-primary hover:file:bg-primary/90"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const url = URL.createObjectURL(file);
+                              setCvData({...cvData, header: {...cvData.header, photoUrl: url}});
+                            }
+                          }} 
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {editingSection === 'experience' && (
@@ -515,7 +608,20 @@ const EditorPage = () => {
                       </div>
                     </div>
                   ))}
-                  <button className="text-primary text-label-sm font-label-sm uppercase hover:underline">+ Ajouter une expérience</button>
+                  <button 
+                    className="text-primary text-label-sm font-label-sm uppercase hover:underline"
+                    onClick={() => {
+                      setCvData({
+                        ...cvData,
+                        experience: [
+                          ...cvData.experience,
+                          { id: Date.now(), title: 'Nouveau poste', company: 'Entreprise', location: '', dates: '', highlights: [] }
+                        ]
+                      });
+                    }}
+                  >
+                    + Ajouter une expérience
+                  </button>
                 </div>
               )}
               {editingSection === 'education' && (
@@ -542,7 +648,20 @@ const EditorPage = () => {
                       </div>
                     </div>
                   ))}
-                  <button className="text-primary text-label-sm font-label-sm uppercase hover:underline">+ Ajouter une formation</button>
+                  <button 
+                    className="text-primary text-label-sm font-label-sm uppercase hover:underline"
+                    onClick={() => {
+                      setCvData({
+                        ...cvData,
+                        education: [
+                          ...cvData.education,
+                          { id: Date.now(), degree: 'Nouveau diplôme', school: 'École', dates: '' }
+                        ]
+                      });
+                    }}
+                  >
+                    + Ajouter une formation
+                  </button>
                 </div>
               )}
               {editingSection === 'skills' && (
@@ -555,22 +674,203 @@ const EditorPage = () => {
                   </div>
                 </div>
               )}
+              {editingSection === 'languages' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-label-sm font-label-sm text-ink uppercase">Langues (séparées par des virgules)</label>
+                    <textarea className="border border-parchment-border rounded p-2 bg-surface text-ink h-32" value={cvData.languages?.join(', ') || ''} onChange={e => {
+                      setCvData({...cvData, languages: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')});
+                    }} />
+                  </div>
+                  <div className="flex justify-start gap-4">
+                    <button 
+                      className="text-red-500 text-sm font-medium hover:underline flex items-center gap-1"
+                      onClick={() => {
+                        setCvData({...cvData, languages: null});
+                        setEditingSection(null);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete_forever</span> Supprimer la section
+                    </button>
+                    <button 
+                      className="text-on-surface-variant text-sm font-medium hover:underline flex items-center gap-1"
+                      onClick={() => {
+                        setCvData({...cvData, languages: []});
+                        setEditingSection(null);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">clear_all</span> Vider
+                    </button>
+                  </div>
+                </div>
+              )}
+              {editingSection === 'interests' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-label-sm font-label-sm text-ink uppercase">Centres d'intérêt (séparés par des virgules)</label>
+                    <textarea className="border border-parchment-border rounded p-2 bg-surface text-ink h-32" value={cvData.interests?.join(', ') || ''} onChange={e => {
+                      setCvData({...cvData, interests: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')});
+                    }} />
+                  </div>
+                  <div className="flex justify-start gap-4">
+                    <button 
+                      className="text-red-500 text-sm font-medium hover:underline flex items-center gap-1"
+                      onClick={() => {
+                        setCvData({...cvData, interests: null});
+                        setEditingSection(null);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete_forever</span> Supprimer la section
+                    </button>
+                    <button 
+                      className="text-on-surface-variant text-sm font-medium hover:underline flex items-center gap-1"
+                      onClick={() => {
+                        setCvData({...cvData, interests: []});
+                        setEditingSection(null);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">clear_all</span> Vider
+                    </button>
+                  </div>
+                </div>
+              )}
+              {editingSection === 'projects' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-label-sm font-label-sm text-ink uppercase">Projets (séparés par des virgules)</label>
+                    <textarea className="border border-parchment-border rounded p-2 bg-surface text-ink h-32" value={cvData.projects?.join(', ') || ''} onChange={e => {
+                      setCvData({...cvData, projects: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')});
+                    }} />
+                  </div>
+                  <div className="flex justify-start gap-4">
+                    <button 
+                      className="text-red-500 text-sm font-medium hover:underline flex items-center gap-1"
+                      onClick={() => {
+                        setCvData({...cvData, projects: null});
+                        setEditingSection(null);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete_forever</span> Supprimer la section
+                    </button>
+                    <button 
+                      className="text-on-surface-variant text-sm font-medium hover:underline flex items-center gap-1"
+                      onClick={() => {
+                        setCvData({...cvData, projects: []});
+                        setEditingSection(null);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">clear_all</span> Vider
+                    </button>
+                  </div>
+                </div>
+              )}
+              {editingSection?.startsWith('custom_') && (
+                <div className="space-y-4">
+                  {cvData.customSections?.map((cSec: any, idx: number) => {
+                    if (cSec.id !== editingSection) return null;
+                    return (
+                      <div key={cSec.id} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-label-sm font-label-sm text-ink uppercase">Titre de la section</label>
+                          <input type="text" className="border border-parchment-border rounded p-2 bg-surface text-ink" value={cSec.title} onChange={e => {
+                            const newCustom = [...cvData.customSections];
+                            newCustom[idx].title = e.target.value;
+                            setCvData({...cvData, customSections: newCustom});
+                          }} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-label-sm font-label-sm text-ink uppercase">Éléments (séparés par des virgules)</label>
+                          <textarea className="border border-parchment-border rounded p-2 bg-surface text-ink h-32" value={cSec.items.join(', ')} onChange={e => {
+                            const newCustom = [...cvData.customSections];
+                            newCustom[idx].items = e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
+                            setCvData({...cvData, customSections: newCustom});
+                          }} />
+                        </div>
+                        <div className="flex justify-start">
+                          <button 
+                            className="text-red-500 text-sm font-medium hover:underline flex items-center gap-1"
+                            onClick={() => {
+                              const newCustom = cvData.customSections.filter((c: any) => c.id !== cSec.id);
+                              setCvData({...cvData, customSections: newCustom});
+                              setEditingSection(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span> Supprimer cette section
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {editingSection === 'add_new' && (
                 <div className="space-y-6 flex flex-col items-center py-8 max-w-sm mx-auto">
                   <p className="text-on-surface-variant text-center">Suggestions de sections :</p>
                   <div className="flex flex-wrap justify-center gap-3">
-                    <button className="px-4 py-2 border border-parchment-border text-on-surface rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase">Langues</button>
-                    <button className="px-4 py-2 border border-parchment-border text-on-surface rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase">Projets</button>
-                    <button className="px-4 py-2 border border-parchment-border text-on-surface rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase">Centres d'intérêt</button>
+                    <button 
+                      className="px-4 py-2 border border-parchment-border text-on-surface rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase"
+                      onClick={() => {
+                        setCvData({...cvData, languages: cvData.languages || []});
+                        setEditingSection('languages');
+                      }}
+                    >
+                      Langues
+                    </button>
+                    <button 
+                      className="px-4 py-2 border border-parchment-border text-on-surface rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase"
+                      onClick={() => {
+                        setCvData({...cvData, projects: cvData.projects || []});
+                        setEditingSection('projects');
+                      }}
+                    >
+                      Projets
+                    </button>
+                    <button 
+                      className="px-4 py-2 border border-parchment-border text-on-surface rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase"
+                      onClick={() => {
+                        setCvData({...cvData, interests: cvData.interests || []});
+                        setEditingSection('interests');
+                      }}
+                    >
+                      Centres d'intérêt
+                    </button>
                   </div>
                   
                   <div className="w-full h-px bg-parchment-border my-2"></div>
                   
-                  <div className="w-full flex flex-col gap-2">
+                  <div className="w-full flex flex-col gap-4">
                     <label className="text-label-sm font-label-sm text-ink uppercase">Ou créer une section personnalisée</label>
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="Ex: Bénévolat" className="flex-1 border border-parchment-border rounded p-2 bg-surface text-ink" />
-                      <button className="px-4 py-2 bg-ink text-on-primary rounded hover:opacity-90 transition-opacity text-label-sm font-label-sm uppercase">Ajouter</button>
+                    <div className="flex flex-col gap-3">
+                      <input 
+                        type="text" 
+                        placeholder="Ex: Bénévolat" 
+                        className="w-full border border-parchment-border rounded p-2 bg-surface text-ink" 
+                        value={newCustomTitle}
+                        onChange={e => setNewCustomTitle(e.target.value)}
+                      />
+                      {currentTemplateDef.hasSidebar && (
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
+                            <input type="radio" name="col" checked={newCustomColumn === 'left'} onChange={() => setNewCustomColumn('left')} /> Colonne gauche
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
+                            <input type="radio" name="col" checked={newCustomColumn === 'main'} onChange={() => setNewCustomColumn('main')} /> Colonne principale
+                          </label>
+                        </div>
+                      )}
+                      <button 
+                        className="w-full px-4 py-2 bg-ink text-on-primary rounded hover:opacity-90 transition-opacity text-label-sm font-label-sm uppercase disabled:opacity-50" 
+                        disabled={!newCustomTitle.trim()}
+                        onClick={() => {
+                          const id = `custom_${Date.now()}`;
+                          const newSec = { id, title: newCustomTitle.trim(), items: [], column: newCustomColumn };
+                          setCvData({...cvData, customSections: [...(cvData.customSections || []), newSec]});
+                          setEditingSection(id);
+                          setNewCustomTitle('');
+                        }}
+                      >
+                        Ajouter
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -588,4 +888,10 @@ const EditorPage = () => {
   );
 }
 
-export default EditorPage;
+export default function EditorPage() {
+  return (
+    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-background text-on-surface-variant">Chargement de l'éditeur...</div>}>
+      <EditorContent />
+    </Suspense>
+  );
+}

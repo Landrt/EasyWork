@@ -22,8 +22,20 @@ export interface CVData {
     email: string;
     phone: string;
     summary?: string;
+    photoUrl?: string;
   };
   experience: CVExperience[];
   education: CVEducation[];
   skills: string[];
+  languages?: string[];
+  interests?: string[];
+  projects?: string[];
+  customSections?: CustomSection[];
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  column?: 'left' | 'main';
+  items: string[];
 }

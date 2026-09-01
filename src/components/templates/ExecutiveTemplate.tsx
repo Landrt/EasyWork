@@ -91,6 +91,33 @@ export const ExecutiveTemplate: React.FC<TemplateProps> = ({ data }) => {
               </ul>
             </section>
           )}
+
+          {/* Projects */}
+          {data.projects && data.projects.length > 0 && (
+            <section>
+              <div className="flex items-center gap-4 mb-6">
+                <h3 className="text-xl font-bold text-slate-900 uppercase tracking-widest whitespace-nowrap">Projets</h3>
+                <div className="h-px bg-slate-300 w-full"></div>
+              </div>
+              <ul className="list-disc pl-5 text-sm text-slate-700 space-y-2 font-sans">
+                {data.projects.map((project, idx) => (
+                  <li key={idx}>{project}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Custom Sections */}
+          {data.customSections?.map((cSec) => (
+            <section key={cSec.id}>
+              <h3 className="text-xl font-semibold text-slate-800 uppercase tracking-widest border-b border-slate-300 pb-2 mb-4">{cSec.title}</h3>
+              <ul className="list-disc pl-5 text-sm text-slate-600 space-y-2">
+                {cSec.items.map((item, idx) => (
+                  <li key={idx} className="pl-1">{item}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       </div>
     </div>

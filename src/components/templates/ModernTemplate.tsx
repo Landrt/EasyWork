@@ -68,6 +68,30 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
               ))}
             </div>
           </section>
+
+          {/* Projects */}
+          {data.projects && data.projects.length > 0 && (
+            <section>
+              <h3 className="text-lg font-bold text-gray-900 border-b-2 border-gray-900 pb-2 mb-4 uppercase tracking-wider">Projets</h3>
+              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                {data.projects.map((project, idx) => (
+                  <li key={idx}>{project}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Custom Sections */}
+          {data.customSections?.map((cSec) => (
+            <section key={cSec.id}>
+              <h3 className="text-lg font-bold text-gray-900 border-b-2 border-gray-900 pb-2 mb-4 uppercase tracking-wider">{cSec.title}</h3>
+              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                {cSec.items.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
 
         {/* Sidebar Column */}

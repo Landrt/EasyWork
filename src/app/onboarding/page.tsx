@@ -49,11 +49,11 @@ function OnboardingContent() {
   const progressPct = Math.min((answers.length / totalSteps) * 100, 90);
 
   const navigateToEditor = () => {
+    let url = `/editor?template=${template || 'modern'}`;
     if (cvId) {
-      router.push(`/editor?cvId=${cvId}&template=${template || 'modern'}`);
-    } else {
-      router.push('/editor');
+      url += `&cvId=${cvId}`;
     }
+    router.push(url);
   };
 
   const fetchNextQuestion = async (updatedAnswers: Answer[]) => {
