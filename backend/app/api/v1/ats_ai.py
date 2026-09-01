@@ -20,7 +20,7 @@ router = APIRouter()
 ALGORITHM_VERSION = "v1"
 
 
-def _verify_cv_version_ownership(cv_version_id: int, user: User, db: Session) -> CVVersion:
+def _verify_cv_version_ownership(cv_version_id: int, user: AuthUser, db: Session) -> CVVersion:
     """Ensure the CV version belongs to the authenticated user."""
     version = db.query(CVVersion).filter(CVVersion.id == cv_version_id).first()
     if not version:

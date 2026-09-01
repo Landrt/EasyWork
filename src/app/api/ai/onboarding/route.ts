@@ -9,11 +9,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Clé API Deepseek manquante.' }, { status: 500 });
     }
 
+    if (!answers || !Array.isArray(answers)) {
+      return NextResponse.json({ error: 'Format de réponses invalide.' }, { status: 400 });
+    }
+
+    if (answers.length > 10) {
+      return NextResponse.json({ done: true });
+    }
+
+    const sanitizedAnswers = answers.slice(0, 10).map((a: any) => ({
+      question: String(a.question || '').slice(0, 300),
+      answer: String(a.answer || '').slice(0, 500)
+    }));
+
     const systemPrompt = `Tu es un assistant de personnalisation pour un outil de création de CV professionnel.
 Tu dois poser des questions courtes et pertinentes pour mieux comprendre le profil de l'utilisateur et personnaliser son CV.
 
-L'utilisateur a déjà répondu à ${answers.length} question(s). Les réponses précédentes sont :
-${answers.map((a: any, i: number) => `Q${i+1}: "${a.question}" → Réponse: "${a.answer}"`).join('\n')}
+L'utilisateur a déjà répondu à ${sanitizedAnswers.length} question(s). Les réponses précédentes sont :
+${sanitizedAnswers.map((a: any, i: number) => `Q${i+1}: "${a.question}" → Réponse: "${a.answer}"`).join('\n')}
 
 Si tu as déjà collecté 3 réponses ou suffisamment d'informations (objectif, secteur, niveau), retourne { "done": true }.
 

@@ -9,9 +9,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Clé API Deepseek manquante dans la configuration.' }, { status: 500 });
     }
 
-    if (!jobDescription?.trim()) {
-      return NextResponse.json({ error: 'Description de poste manquante.' }, { status: 400 });
+    if (!jobDescription || typeof jobDescription !== 'string' || !jobDescription.trim()) {
+      return NextResponse.json({ error: 'Description de poste manquante ou invalide.' }, { status: 400 });
     }
+
+    if (jobDescription.length > 15000) {
+      return NextResponse.json({ error: 'Description de poste trop longue (max 15 000 caractères).' }, { status: 400 });
+    }
+
+    const sanitizedJobDesc = jobDescription.slice(0, 15000).trim();
+    const sanitizedCvData = cvData ? JSON.stringify(cvData).slice(0, 20000) : null;
 
     const systemPrompt = `Tu es un expert en recrutement ATS (Applicant Tracking System).
 Analyse l'offre d'emploi et le profil CV fournis, puis retourne UNIQUEMENT un objet JSON avec ce format exact :
@@ -31,10 +38,10 @@ Le score doit être un nombre entre 0 et 100.
 Retourne au maximum 4 points forts et 4 manques.`;
 
     const userPrompt = `OFFRE D'EMPLOI:
-${jobDescription}
+${sanitizedJobDesc}
 
 PROFIL DU CANDIDAT:
-${cvData ? JSON.stringify(cvData, null, 2) : 'Profil non disponible - analyser uniquement l\'offre.'}
+${sanitizedCvData || 'Profil non disponible - analyser uniquement l\'offre.'}
 
 Génère l'analyse de compatibilité.`;
 

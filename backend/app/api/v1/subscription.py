@@ -11,6 +11,10 @@ from app.services import subscription_service
 router = APIRouter()
 
 
+from app.core.config import settings
+
+ALLOWED_PLANS = {"FREE", "PRO", "FOUNDER"}
+
 @router.post("/checkout", response_model=SubscriptionResponse, status_code=201)
 def checkout(
     body: CheckoutRequest,
@@ -20,12 +24,23 @@ def checkout(
     """
     SUBSCRIPTION.checkout
     Validates plan, handles Founder atomic quota, sets expiry.
-    In production: provider_reference comes from a validated Stripe webhook, not user input.
+    Direct activation is restricted to development mode.
     """
+    plan_tier = body.tier.upper().strip()
+    if plan_tier not in ALLOWED_PLANS:
+        raise HTTPException(status_code=400, detail=f"Invalid plan tier. Allowed: {', '.join(ALLOWED_PLANS)}")
+
+    # In production, checkout must initiate a payment session via Stripe/Flutterwave rather than direct activation
+    if settings.ENVIRONMENT != "development" and plan_tier != "FREE" and not body.provider_reference:
+        raise HTTPException(
+            status_code=400,
+            detail="Paid plan activation requires a verified payment provider reference or webhook."
+        )
+
     return subscription_service.checkout(
         user_id=current_user.id,
-        plan_name=body.tier,
-        provider_reference=body.provider_reference or "manual",
+        plan_name=plan_tier,
+        provider_reference=body.provider_reference or "manual_dev",
         db=db,
     )
 

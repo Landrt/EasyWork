@@ -9,12 +9,16 @@ def verify_neon_auth_token(token: str) -> dict:
     Returns the decoded payload if valid.
     """
     if not settings.NEON_AUTH_JWKS_URL:
-        # Fallback for development if not configured
-        print("WARNING: NEON_AUTH_JWKS_URL is not set. Skipping token validation.")
+        if settings.ENVIRONMENT != "development":
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Authentication provider is not properly configured for production (missing JWKS URL).",
+            )
+        # Fallback ONLY for local development
+        print("WARNING: NEON_AUTH_JWKS_URL is not set. Running in insecure development fallback mode.")
         try:
             return jwt.decode(token, options={"verify_signature": False})
         except Exception:
-            # If it's not a valid JWT (like our frontend mock), just return it as the subject
             return {"sub": token, "email": f"{token}@example.com"}
 
     try:

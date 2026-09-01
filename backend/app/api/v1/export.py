@@ -15,6 +15,8 @@ except ImportError:
 
 router = APIRouter()
 
+ALLOWED_TEMPLATES = {"devellopeur", "modern", "executive"}
+
 class ExportRequest(BaseModel):
     template: str
     cvData: Dict[str, Any]
@@ -24,32 +26,37 @@ async def export_cv(request: ExportRequest):
     if not PLAYWRIGHT_AVAILABLE:
         raise HTTPException(status_code=500, detail="Playwright is not installed on the server.")
 
-    # Convert cvData to JSON string
-    cv_data_json = json.dumps(request.cvData)
+    normalized_template = request.template.lower().strip()
+    if normalized_template not in ALLOWED_TEMPLATES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid template. Allowed templates: {', '.join(sorted(ALLOWED_TEMPLATES))}"
+        )
+
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    print_url = f"{frontend_url}/print?template={normalized_template}"
     
-    # In a real production env, this would be the deployed frontend URL.
-    # For now, we assume frontend runs on localhost:3000
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    print_url = f"{frontend_url}/print?template={request.template}"
+    # Safe JSON serialization for browser init script
+    cv_data_json = json.dumps(request.cvData)
 
     try:
         async with async_playwright() as p:
-            # Lancement de Chromium en mode headless
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+            )
+            context = await browser.new_context(
+                viewport={"width": 1200, "height": 1600}
+            )
+            page = await context.new_page()
             
-            # Injection des données du CV dans la fenêtre globale avant le chargement de la page
+            # Injection sécurisée des données
             await page.add_init_script(f"window.cvData = {cv_data_json};")
             
-            # Navigation vers la page d'impression spéciale du frontend
-            # wait_until="networkidle" assure que les polices et composants sont chargés
-            await page.goto(print_url, wait_until="networkidle")
+            # Navigation avec timeout strict
+            await page.goto(print_url, wait_until="networkidle", timeout=15000)
+            await page.wait_for_timeout(300)
             
-            # Attendre explicitement que le texte soit rendu (au cas où)
-            await page.wait_for_timeout(500)
-            
-            # Génération du PDF
-            # print_background=True pour garder les couleurs de fond (très important pour les CV)
             pdf_bytes = await page.pdf(
                 format="A4",
                 print_background=True,
@@ -57,9 +64,11 @@ async def export_cv(request: ExportRequest):
             )
             
             await browser.close()
-            
-            # Retourner le PDF directement avec le bon Content-Type
-            return Response(content=pdf_bytes, media_type="application/pdf")
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="cv_{normalized_template}.pdf"'}
+            )
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")

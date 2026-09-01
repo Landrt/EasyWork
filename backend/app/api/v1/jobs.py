@@ -7,6 +7,7 @@ from app.api.deps import get_current_user
 from app.api.deps import AuthUser
 from app.models.job_matching import Job, MatchAnalysis
 from app.models.profile import CandidateProfile
+from app.models.cv import CV, CVVersion
 from app.schemas.job_matching import JobCreate, JobResponse, MatchAnalysisResponse
 from app.services import job_matching_service
 
@@ -80,6 +81,14 @@ def create_match(
     profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id).first()
     if not profile:
         raise HTTPException(status_code=400, detail="Candidate profile not found")
+
+    # Enforce CV Version ownership check (IDOR mitigation)
+    version = db.query(CVVersion).join(CV, CV.id == CVVersion.cv_id).filter(
+        CVVersion.id == cv_version_id,
+        CV.user_id == current_user.id
+    ).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="CV version not found or access denied")
 
     analysis = job_matching_service.compute_match(
         profile_id=profile.id,

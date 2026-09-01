@@ -4,6 +4,7 @@ from typing import Optional
 class Settings(BaseSettings):
     PROJECT_NAME: str = "ResumePro Backend"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = "development"  # 'development', 'staging', 'production'
 
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/resumepro"

@@ -13,6 +13,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Expériences invalides.' }, { status: 400 });
     }
 
+    if (experience.length > 10) {
+      return NextResponse.json({ error: 'Trop d\'expériences soumises (maximum 10).' }, { status: 400 });
+    }
+
+    // Sanitize and limit payload size
+    const sanitizedExperience = experience.map((exp: any) => ({
+      id: exp.id,
+      title: String(exp.title || '').slice(0, 150),
+      company: String(exp.company || '').slice(0, 150),
+      highlights: Array.isArray(exp.highlights) 
+        ? exp.highlights.slice(0, 8).map((h: any) => String(h || '').slice(0, 400))
+        : []
+    }));
+
     const systemPrompt = `Tu es un expert en recrutement et optimisation de CV pour les systèmes ATS.
 Ton rôle est d'analyser les expériences fournies par l'utilisateur et de suggérer des améliorations concrètes pour chaque point de l'expérience (impact quantifiable, verbe d'action, mots-clés ATS).
 Renvoie UNIQUEMENT un objet JSON avec une clé "suggestions" contenant une liste d'objets. 
@@ -29,7 +43,7 @@ Chaque objet suggestion DOIT avoir ce format exact :
   "dismissed": false
 }`;
 
-    const userPrompt = `Voici mes expériences actuelles :\n\n${JSON.stringify(experience, null, 2)}\n\nGénère 2 à 4 suggestions d'amélioration pertinentes sur certains points précis.`;
+    const userPrompt = `Voici mes expériences actuelles :\n\n${JSON.stringify(sanitizedExperience, null, 2)}\n\nGénère 2 à 4 suggestions d'amélioration pertinentes sur certains points précis.`;
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
