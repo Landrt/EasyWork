@@ -47,3 +47,6 @@ __pycache__/
 backend/venv/
 backend/.env
 .env
+*.db
+*.sqlite3
+backend/*.db

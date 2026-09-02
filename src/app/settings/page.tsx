@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApi } from '@/lib/api';
+import CandidateNavbar from '@/components/CandidateNavbar';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -114,24 +115,7 @@ export default function SettingsPage() {
         }
       `}} />
 
-      {/* TopNavBar */}
-      <nav className="bg-surface docked full-width top-0 border-b border-parchment-border z-50">
-        <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
-          <Link href="/" className="text-headline-md font-headline-md font-bold text-ink flex items-center gap-2 cursor-pointer">
-            <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>description</span>
-            EasyWork
-          </Link>
-          <div className="hidden md:flex gap-8 items-center">
-            <Link className="nav-inactive text-label-sm font-label-sm" href="/dashboard">Mes CV</Link>
-            <Link className="nav-inactive text-label-sm font-label-sm" href="/profile">Mon profil</Link>
-            <Link className="nav-active text-label-sm font-label-sm active:opacity-80" href="/settings">Réglages</Link>
-            <Link className="nav-inactive text-label-sm font-label-sm" href="/affiliate">Affilié</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <img alt="Photo de profil utilisateur" className="w-10 h-10 rounded-full border border-parchment-border object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzoTxV5D0g40g0MqPDuUzDjj_bv6O0Q2foXQAvlnCx7J7fSh6uTHAzzfn22tWsHOu06kI6DSgT2NXgbZXg8M_INe1KzGs1lQ2iY7nDQmQmjbfdRT0iKuqnv7cY9x16_7yKJ2acFkS2a-6lQSE-ZcM877ToFSAg_iMvHiWpblCLadngHctMdun8WW1q9-98jsAgwjqWErZac2qfwqnMMjBdbzescVg1O0DqcnZ1Eo2jGlLDa1nKR2M5"/>
-          </div>
-        </div>
-      </nav>
+      <CandidateNavbar />
 
       {/* Main Content */}
       <main className="flex-grow w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import CandidateNavbar from '@/components/CandidateNavbar';
 
 interface MatchingResult {
   jobTitle: string;
@@ -50,26 +51,7 @@ export default function MatchingPage() {
         }
       `}} />
 
-      {/* TopNavBar */}
-      <nav className="bg-surface border-b border-parchment-border docked full-width top-0 sticky z-50">
-        <div className="flex justify-between items-center w-full px-margin-desktop py-4 max-w-max-width mx-auto">
-          <div className="flex items-center gap-8">
-            <Link className="text-headline-md font-headline-md font-bold text-ink" href="/">EasyWork</Link>
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link className="text-primary font-bold border-b-2 border-primary pb-1 text-label-sm font-label-sm" href="/dashboard">Mes CV</Link>
-              <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm" href="/profile">Mon profil</Link>
-              <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm" href="/settings">Réglages</Link>
-              <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm" href="/affiliate">Affilié</Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="w-8 h-8 rounded-full overflow-hidden border border-parchment-border hover:border-clay-accent transition-colors" onClick={() => router.push('/settings')}>
-              <img alt="Photo de profil utilisateur" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMoPC5zkTPtro4pkZdTpwOiIHgD516CgBPfJJPRSjf9LkmnJ0A1YQtgFWiOLCNC2Kpe8pGHiQKoKSy1RfEC3f70zF6M9yqVXuW8BjOy3BSiLdZcEHcoXLoJ2H53SkZ6XxK3UhkKf2UMdrykG7QYJJEWX9ICgBV1G61G2BkqN25Bri8hLuyWtGk8Y0TwRJZldQs3uFRtTBajCTfyt1_aS6E9gGDdA9VjIQekshd9SbtADvVBMhgQlxq"/>
-            </button>
-          </div>
-        </div>
-      </nav>
+      <CandidateNavbar />
 
       {/* Main Content */}
       <main className="flex-grow w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">

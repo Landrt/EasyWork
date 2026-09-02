@@ -1,13 +1,34 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import candidate_intelligence, qro, cvs, jobs, ats_ai, subscription, affiliate, account, export
+from app.api.v1 import candidate_intelligence, qro, cvs, jobs, ats_ai, subscription, affiliate, account, export, admin
 from app.core.config import settings
+
+from app.core.database import Base, engine, SessionLocal
+import app.models
+from app.models.subscription import Plan
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="ResumePro Backend API — 12-domain SaaS CV x ATS platform",
     version="0.1.0",
 )
+
+@app.on_event("startup")
+def init_database():
+    try:
+        Base.metadata.create_all(bind=engine)
+        with SessionLocal() as db:
+            if db.query(Plan).count() == 0:
+                default_plans = [
+                    Plan(name="FREE", display_name="Gratuit", price=0.0, is_recurring=False),
+                    Plan(name="SPRINT", display_name="Sprint 14 jours", price=19.0, duration_days=14, is_recurring=False),
+                    Plan(name="ACTIVE", display_name="Recherche Active", price=29.0, is_recurring=True),
+                    Plan(name="FOUNDER", display_name="Accès Fondateur", price=99.0, is_recurring=False, max_slots=200, slots_taken=0),
+                ]
+                db.add_all(default_plans)
+                db.commit()
+    except Exception as e:
+        print(f"[DB INIT WARNING] {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +47,7 @@ app.include_router(subscription.router,            prefix=f"{settings.API_V1_STR
 app.include_router(affiliate.router,               prefix=f"{settings.API_V1_STR}/affiliate",    tags=["affiliate"])
 app.include_router(account.router,                 prefix=f"{settings.API_V1_STR}/account",      tags=["account"])
 app.include_router(export.router,                  prefix=f"{settings.API_V1_STR}/export",       tags=["export"])
+app.include_router(admin.router,                   prefix=f"{settings.API_V1_STR}/admin",        tags=["admin"])
 
 
 @app.get("/health")

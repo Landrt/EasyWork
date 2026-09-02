@@ -11,6 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import CandidateNavbar from '@/components/CandidateNavbar';
 
 interface Experience {
   title: string;
@@ -88,30 +89,7 @@ export default function ProfilePage() {
         .resume-card:hover { border-color: var(--color-clay-accent); }
       `}} />
 
-      {/* TopNavBar */}
-      <nav className="bg-surface border-b border-parchment-border top-0 z-50 sticky">
-        <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
-          <Link className="text-headline-md font-headline-md font-bold text-ink" href="/">EasyWork</Link>
-          <div className="hidden md:flex items-center space-x-8">
-            <Link className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm uppercase" href="/dashboard">Mes CV</Link>
-            <Link className="text-primary font-bold border-b-2 border-primary pb-1 text-label-sm font-label-sm uppercase" href="/profile">Mon profil</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm uppercase" href="/settings">Réglages</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm uppercase" href="/affiliate">Affilié</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="md:hidden text-ink" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
-            </button>
-          </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-surface border-t border-parchment-border px-margin-mobile py-4 flex flex-col gap-4">
-            <Link className="text-on-surface-variant text-label-sm font-label-sm uppercase" href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Mes CV</Link>
-            <Link className="text-primary font-bold text-label-sm font-label-sm uppercase" href="/profile" onClick={() => setMobileMenuOpen(false)}>Mon profil</Link>
-            <Link className="text-on-surface-variant text-label-sm font-label-sm uppercase" href="/settings" onClick={() => setMobileMenuOpen(false)}>Réglages</Link>
-          </div>
-        )}
-      </nav>
+      <CandidateNavbar />
 
       <main className="flex-grow w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
         <header className="mb-12 max-w-3xl">

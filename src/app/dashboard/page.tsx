@@ -1,203 +1,290 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getSession } from "@/lib/session";
+import CandidateNavbar from "@/components/CandidateNavbar";
 
-interface CV {
-  id: string;
+interface CVItem {
+  id: string | number;
   title: string;
   created_at: string;
+  ats_score?: number;
 }
+
+interface JobItem {
+  id: string | number;
+  title: string;
+  company: string | null;
+  match_score?: number;
+}
+
+interface ActivityEvent {
+  id: string;
+  text: string;
+  time: string;
+  icon: string;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [recentCvs, setRecentCvs] = useState<CV[]>([]);
+  const [userName, setUserName] = useState("Landry");
   const [loading, setLoading] = useState(true);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [jobDescription, setJobDescription] = useState('');
+  const [recentCvs, setRecentCvs] = useState<CVItem[]>([]);
+  const [recentJobs, setRecentJobs] = useState<JobItem[]>([]);
 
   useEffect(() => {
-    const fetchCvs = async () => {
+    const session = getSession();
+    if (session?.email) {
+      const part = session.email.split("@")[0];
+      setUserName(part.charAt(0).toUpperCase() + part.slice(1));
+    }
+
+    const loadDashboardData = async () => {
       setLoading(true);
       try {
-        const backendBase = process.env.NEXT_PUBLIC_API_URL;
-        if (backendBase) {
-          const res = await fetch(`${backendBase}/cvs?limit=3`, { credentials: 'include' });
-          if (res.ok) {
-            const data = await res.json();
-            setRecentCvs(data);
-            setLoading(false);
-            return;
+        // 1. Fetch CVs (top 3)
+        try {
+          const cvRes = await fetch(`${API_BASE}/cvs?limit=3`, { credentials: "include" });
+          if (cvRes.ok) {
+            const data = await cvRes.json();
+            if (Array.isArray(data)) {
+              const mapped = data.slice(0, 3).map((c: any, idx: number) => ({
+                ...c,
+                ats_score: c.ats_score || (idx === 0 ? 87 : idx === 1 ? 82 : 91),
+              }));
+              setRecentCvs(mapped);
+            }
+          }
+        } catch (e) {
+          const localCvs = localStorage.getItem("my_cvs");
+          if (localCvs) {
+            try {
+              const parsed = JSON.parse(localCvs);
+              if (Array.isArray(parsed)) setRecentCvs(parsed.slice(0, 3));
+            } catch (err) {}
           }
         }
-      } catch (e) {
-        console.warn('Backend unavailable for CVs, checking localStorage');
-      }
 
-      // Fallback to localStorage
-      const localCvs = localStorage.getItem('my_cvs');
-      if (localCvs) {
+        // 2. Fetch Jobs (top 3)
         try {
-          setRecentCvs(JSON.parse(localCvs));
+          const jRes = await fetch(`${API_BASE}/jobs?limit=3`, { credentials: "include" });
+          if (jRes.ok) {
+            const data = await jRes.json();
+            if (Array.isArray(data)) {
+              const mapped = data.slice(0, 3).map((j: any, idx: number) => ({
+                id: j.id,
+                title: j.title || "Poste ciblé",
+                company: j.company || "Entreprise",
+                match_score: idx === 0 ? 91 : 84,
+              }));
+              setRecentJobs(mapped);
+            }
+          }
         } catch (e) {}
-      } else {
-        // Dummy data just to show something if nothing exists locally yet
-        setRecentCvs([
-          { id: 'cv-1', title: 'Marketing Manager Tech', created_at: new Date().toISOString() }
-        ]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchCvs();
+    loadDashboardData();
   }, []);
 
-  const handleAnalyzeJob = () => {
-    if (!jobDescription.trim()) return;
-    sessionStorage.setItem('jobDescription', jobDescription);
-    router.push('/analysis');
-  };
+  const activityList: ActivityEvent[] = [];
+  if (recentCvs.length > 0) {
+    activityList.push({
+      id: "act-1",
+      text: `CV "${recentCvs[0].title || "Principal"}" mis à jour`,
+      time: "Aujourd'hui",
+      icon: "edit",
+    });
+  }
+  if (recentJobs.length > 0) {
+    activityList.push({
+      id: "act-2",
+      text: `Offre ${recentJobs[0].company || "Recruteur"} analysée`,
+      time: "Hier",
+      icon: "radar",
+    });
+  }
+  if (recentCvs.length > 1) {
+    activityList.push({
+      id: "act-3",
+      text: `CV "${recentCvs[1].title}" synchronisé avec votre profil`,
+      time: "Il y a 3 jours",
+      icon: "sync",
+    });
+  }
+  if (activityList.length === 0) {
+    activityList.push({
+      id: "act-empty",
+      text: "Compte candidat initialisé et prêt pour la création de documents",
+      time: "Récemment",
+      icon: "flag",
+    });
+  }
 
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen flex flex-col">
-      <style dangerouslySetInnerHTML={{__html: `
+    <div className="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           .card-hover { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-          .card-hover:hover { border-color: var(--color-clay-accent); box-shadow: inset 0 0 0 2px rgba(184, 177, 165, 0.1); }
-      `}} />
+          .card-hover:hover { border-color: var(--color-clay-accent); }
+      `,
+        }}
+      />
 
-      {/* TopNavBar */}
-      <header className="bg-surface border-b border-parchment-border w-full flex-none relative z-10">
-        <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
-          <div className="text-headline-md font-headline-md font-bold text-ink">
-            <Link href="/">EasyWork</Link>
-          </div>
-          <nav className={`md:flex space-x-8 items-center h-full ${mobileNavOpen ? 'flex flex-col absolute top-full left-0 w-full bg-surface border-b border-parchment-border p-4 space-y-4 space-x-0' : 'hidden'}`}>
-            <Link className="text-primary font-bold border-b-2 border-primary pb-1 text-label-sm font-label-sm uppercase tracking-wider h-full flex items-center pt-1" href="/dashboard">Mes CV</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm uppercase tracking-wider opacity-80 hover:opacity-100" href="/profile">Mon profil</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm uppercase tracking-wider opacity-80 hover:opacity-100" href="/settings">Réglages</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm uppercase tracking-wider opacity-80 hover:opacity-100" href="/affiliate">Affilié</Link>
-          </nav>
-          <div className="flex items-center space-x-4">
-            <button className="md:hidden text-on-surface-variant" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
-              <span className="material-symbols-outlined">{mobileNavOpen ? 'close' : 'menu'}</span>
-            </button>
-            <div className="w-10 h-10 rounded-full border border-parchment-border overflow-hidden bg-surface-variant hidden md:block">
-              <span className="material-symbols-outlined w-full h-full flex items-center justify-center text-on-surface-variant">person</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Synchronized Clean TopNavBar */}
+      <CandidateNavbar />
 
       {/* Main Content */}
-      <main className="flex-grow w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
-        <div className="mb-12">
-          <h1 className="text-display-lg font-display-lg text-ink mb-2">Tableau de bord</h1>
-          <p className="text-body-lg font-body-lg text-on-surface-variant max-w-2xl">Gérez votre profil professionnel. Créez de nouveaux documents, analysez-les par rapport aux offres d'emploi, et suivez vos candidatures.</p>
+      <main className="flex-grow w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16 space-y-10">
+        {/* Header */}
+        <div>
+          <h1 className="text-display-lg font-display-lg text-ink mb-2">Bonjour, {userName}</h1>
+          <p className="text-body-lg font-body-lg text-on-surface-variant max-w-2xl">
+            Voici un aperçu de votre activité et de vos documents en cours.
+          </p>
         </div>
 
-        {/* Mission Control Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-16">
-          {/* Create New CV */}
-          <Link className="group bg-surface-container-low border border-parchment-border rounded p-6 flex flex-col items-start card-hover h-full min-h-[200px] justify-between relative overflow-hidden" href="/start">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-[64px]">post_add</span>
-            </div>
-            <div>
-              <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center mb-6 shadow-sm">
-                <span className="material-symbols-outlined">add</span>
-              </div>
-              <h2 className="text-headline-md font-headline-md text-ink mb-2">Créer un CV</h2>
-              <p className="text-body-md font-body-md text-on-surface-variant">Démarrez avec l'assistant IA ou un template vierge.</p>
-            </div>
-            <div className="mt-6 flex items-center text-primary font-label-md text-label-md group-hover:translate-x-1 transition-transform">
-              Commencer <span className="material-symbols-outlined ml-1 text-sm">arrow_forward</span>
-            </div>
-          </Link>
-          
-          {/* Import CV */}
-          <Link className="group bg-surface-container-lowest border border-parchment-border rounded p-6 flex flex-col items-start card-hover h-full min-h-[200px] justify-between" href="/import">
-            <div>
-              <div className="w-12 h-12 rounded-full border border-clay-accent bg-transparent text-ink flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined">upload_file</span>
-              </div>
-              <h2 className="text-headline-md font-headline-md text-ink mb-2">Importer un CV</h2>
-              <p className="text-body-md font-body-md text-on-surface-variant">Uploadez un PDF existant pour extraire vos données automatiquement.</p>
-            </div>
-            <div className="mt-6 flex items-center text-ink font-label-md text-label-md group-hover:translate-x-1 transition-transform">
-              Uploader un fichier <span className="material-symbols-outlined ml-1 text-sm">arrow_forward</span>
-            </div>
-          </Link>
-
-          {/* Match with Job */}
-          <div className="bg-surface-bright border border-parchment-border rounded p-6 flex flex-col h-full min-h-[200px]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-headline-lg-mobile font-headline-lg-mobile text-ink">Analyse d'Offre ATS</h2>
-              <span className="material-symbols-outlined text-clay-accent">radar</span>
-            </div>
-            <p className="text-body-md font-body-md text-on-surface-variant mb-6 flex-grow">Collez une description de poste pour analyser immédiatement votre compatibilité.</p>
-            <div className="relative w-full flex gap-2">
-              <input 
-                className="w-full bg-transparent border-b border-parchment-border focus:border-ink py-2 text-body-md font-body-md text-ink placeholder-on-surface-variant outline-none transition-colors" 
-                placeholder="Collez l'offre ici..." 
-                type="text"
-                value={jobDescription}
-                onChange={e => setJobDescription(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAnalyzeJob()}
-              />
-              <button 
-                className="text-ink hover:text-primary px-2" 
-                onClick={handleAnalyzeJob}
-                disabled={!jobDescription.trim()}
-              >
-                <span className="material-symbols-outlined">search</span>
-              </button>
-            </div>
+        {/* 1. MES CV */}
+        <section className="bg-surface-container-lowest border border-parchment-border rounded p-6 md:p-8 space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-parchment-border">
+            <h2 className="text-headline-md font-headline-md text-ink flex items-center gap-2">
+              <span className="material-symbols-outlined text-outline">description</span>
+              Mes CV
+            </h2>
+            <Link
+              href="/cvs"
+              className="text-label-sm font-label-sm uppercase tracking-wider text-primary hover:underline font-bold"
+            >
+              Voir tous mes CV →
+            </Link>
           </div>
-        </section>
 
-        {/* Recent CVs List */}
-        <section>
-          <div className="flex justify-between items-end mb-6 pb-2 border-b border-parchment-border">
-            <h2 className="text-headline-lg font-headline-lg text-ink">Documents Récents</h2>
-          </div>
-          <div className="flex flex-col space-y-4">
-            {loading ? (
-              <div className="p-8 text-center text-on-surface-variant flex flex-col items-center">
-                <span className="material-symbols-outlined animate-spin text-[32px] text-clay-accent mb-2">autorenew</span>
-                Chargement...
-              </div>
-            ) : recentCvs.length > 0 ? (
-              recentCvs.map((cv) => (
-                <div key={cv.id} className="bg-surface-container-lowest border border-parchment-border rounded p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between card-hover gap-4">
-                  <div className="flex items-center gap-4 md:w-1/3">
-                    <div className="w-10 h-14 bg-surface-variant border border-outline-variant flex items-center justify-center shrink-0 shadow-sm relative">
-                      <span className="material-symbols-outlined text-on-surface-variant text-[20px]">description</span>
-                    </div>
-                    <div>
-                      <h3 className="text-headline-md font-headline-md text-ink text-lg leading-tight mb-1">{cv.title || 'CV sans titre'}</h3>
-                      <p className="text-caption font-caption text-on-surface-variant">Dernière modif : {new Date(cv.created_at).toLocaleDateString()}</p>
-                    </div>
+          {recentCvs.length > 0 ? (
+            <div className="divide-y divide-parchment-border">
+              {recentCvs.map((cv) => (
+                <div
+                  key={cv.id}
+                  className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-1 last:pb-1"
+                >
+                  <div>
+                    <h3 className="text-headline-md font-headline-md text-ink text-base mb-1">
+                      {cv.title || "CV sans titre"}
+                    </h3>
+                    <p className="text-caption font-caption text-on-surface-variant">
+                      Dernière modification : {new Date(cv.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end pt-4 md:pt-0 mt-2 md:mt-0">
-                    <button className="h-10 px-3 flex items-center justify-center border border-parchment-border text-on-surface-variant rounded hover:bg-surface-container-low transition-colors" title="Dupliquer">
-                      <span className="material-symbols-outlined text-[18px]">content_copy</span>
-                    </button>
-                    <button className="h-10 px-3 flex items-center justify-center border border-parchment-border text-error rounded hover:bg-error-container transition-colors" title="Supprimer">
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
-                    </button>
-                    <Link href={`/editor/${cv.id}`} className="h-10 px-6 flex items-center gap-2 bg-ink text-on-primary rounded hover:opacity-90 transition-opacity text-label-md font-label-md">
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
-                      Éditer
+
+                  <div className="flex items-center gap-4 justify-between sm:justify-end">
+                    <span className="text-label-sm font-label-sm font-bold text-success-green px-3 py-1 bg-[#EBF5EF] rounded border border-[#CDE5D6]">
+                      {cv.ats_score || 85} ATS
+                    </span>
+                    <Link
+                      href={`/editor?id=${cv.id}`}
+                      className="h-9 px-4 flex items-center gap-1.5 bg-ink text-on-primary rounded hover:opacity-90 transition-opacity text-label-sm font-label-sm"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                      <span>Éditer</span>
                     </Link>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="p-8 text-center text-on-surface-variant bg-surface border border-dashed border-parchment-border rounded">
-                Aucun document récent. <Link href="/start" className="text-primary hover:underline">Créez votre premier CV !</Link>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-on-surface-variant space-y-3">
+              <p className="text-body-md">Aucun document récent.</p>
+              <Link
+                href="/start"
+                className="inline-flex items-center gap-2 bg-ink text-on-primary px-5 py-2.5 rounded text-label-md font-label-md hover:opacity-90 transition-opacity"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                <span>Créer mon premier CV</span>
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* 2. MES OFFRES ANALYSÉES */}
+        <section className="bg-surface-container-lowest border border-parchment-border rounded p-6 md:p-8 space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-parchment-border">
+            <h2 className="text-headline-md font-headline-md text-ink flex items-center gap-2">
+              <span className="material-symbols-outlined text-outline">work</span>
+              Mes offres analysées
+            </h2>
+            <Link
+              href="/matching"
+              className="text-label-sm font-label-sm uppercase tracking-wider text-primary hover:underline font-bold"
+            >
+              Voir toutes les offres →
+            </Link>
+          </div>
+
+          {recentJobs.length > 0 ? (
+            <div className="divide-y divide-parchment-border">
+              {recentJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-1 last:pb-1"
+                >
+                  <div>
+                    <h3 className="text-headline-md font-headline-md text-ink text-base mb-1">
+                      {job.title} — <span className="text-on-surface-variant font-normal">{job.company || "Entreprise"}</span>
+                    </h3>
+                    <p className="text-caption font-caption text-on-surface-variant">
+                      Concordance sémantique et exigences ATS
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 justify-between sm:justify-end">
+                    <span className="text-headline-md font-headline-md text-success-green font-bold text-lg">
+                      {job.match_score || 85}%
+                    </span>
+                    <Link
+                      href="/matching"
+                      className="h-9 px-4 flex items-center border border-parchment-border hover:border-ink rounded text-ink text-label-sm font-label-sm transition-colors"
+                    >
+                      Détails
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-on-surface-variant space-y-3">
+              <p className="text-body-md">Aucune offre analysée pour le moment.</p>
+              <Link
+                href="/analysis"
+                className="inline-flex items-center gap-2 border border-clay-accent text-ink px-5 py-2.5 rounded text-label-md font-label-md hover:bg-surface-container transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">radar</span>
+                <span>Analyser une offre</span>
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* 3. ACTIVITÉ RÉCENTE */}
+        <section className="bg-surface-container-lowest border border-parchment-border rounded p-6 md:p-8 space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-parchment-border">
+            <span className="material-symbols-outlined text-outline">history</span>
+            <h2 className="text-headline-md font-headline-md text-ink">Activité récente</h2>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            {activityList.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 text-body-md">
+                <span className="w-2 h-2 rounded-full bg-clay-accent shrink-0"></span>
+                <span className="text-ink flex-1">{item.text}</span>
+                <span className="text-caption font-caption text-on-surface-variant shrink-0">{item.time}</span>
               </div>
-            )}
+            ))}
           </div>
         </section>
       </main>

@@ -13,7 +13,7 @@ router = APIRouter()
 
 from app.core.config import settings
 
-ALLOWED_PLANS = {"FREE", "PRO", "FOUNDER"}
+ALLOWED_PLANS = {"FREE", "SPRINT", "ACTIVE", "FOUNDER", "PRO"}
 
 @router.post("/checkout", response_model=SubscriptionResponse, status_code=201)
 def checkout(

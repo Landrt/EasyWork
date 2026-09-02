@@ -1,10 +1,29 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic import field_validator
+from typing import Optional, Union, List
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "ResumePro Backend"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"  # 'development', 'staging', 'production'
+
+    # Admin access configuration (supporte une liste ou une chaîne séparée par des virgules dans .env)
+    ADMIN_EMAILS: Union[List[str], str] = ["admin@resumepro.app", "admin@gencv.com", "landry@gencv.com"]
+    DEFAULT_AFFILIATE_RATE: float = 0.30
+
+    @field_validator("ADMIN_EMAILS", mode="before")
+    def parse_admin_emails(cls, v):
+        if isinstance(v, str):
+            # Accepte "email1@domaine.com,email2@domaine.com" ou JSON
+            import json
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return parsed
+            except Exception:
+                pass
+            return [email.strip() for email in v.split(",") if email.strip()]
+        return v
 
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/resumepro"

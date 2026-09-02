@@ -58,3 +58,25 @@ class Subscription(Base):
     expires_at = Column(DateTime(timezone=True), nullable=True)  # NULL = perpetual (FOUNDER)
     provider_reference = Column(String, nullable=True)  # Stripe payment ID etc.
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    plan = relationship("Plan")
+
+
+class PaymentTransaction(Base):
+    """
+    Tracks all payment transactions (Stripe, Flutterwave, manual).
+    """
+    __tablename__ = "payment_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    subscription_id = Column(Integer, ForeignKey("subscriptions.id", ondelete="SET NULL"), nullable=True)
+    amount = Column(Float, nullable=False)
+    currency = Column(String, default="EUR")
+    provider = Column(String, default="stripe")  # "stripe" / "flutterwave" / "manual"
+    provider_payment_id = Column(String, nullable=True, index=True)
+    status = Column(String, default="succeeded")  # "succeeded" / "pending" / "refunded" / "failed"
+    refunded_amount = Column(Float, default=0.0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    subscription = relationship("Subscription", backref="transactions")

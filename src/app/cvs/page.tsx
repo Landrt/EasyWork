@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApi } from '@/lib/api';
 
+import CandidateNavbar from '@/components/CandidateNavbar';
+
 export default function CvsPage() {
   const router = useRouter();
   const { fetch } = useApi();
@@ -39,21 +41,7 @@ export default function CvsPage() {
         }
       `}} />
 
-      {/* TopNavBar */}
-      <header className="bg-surface border-b border-parchment-border docked full-width top-0 z-50">
-        <div className="flex justify-between items-center w-full px-margin-desktop py-4 max-w-max-width mx-auto">
-          <div className="text-headline-md font-headline-md font-bold text-ink">EasyWork</div>
-          <nav className="hidden md:flex gap-8">
-            <Link className="text-primary font-bold border-b-2 border-primary pb-1 text-label-sm font-label-sm" href="/dashboard">Mes CV</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm" href="/profile">Mon profil</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm" href="/settings">Réglages</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm" href="/affiliate">Affilié</Link>
-          </nav>
-          <div className="w-10 h-10 rounded-full bg-surface-variant overflow-hidden border border-parchment-border flex-shrink-0">
-            <img alt="Photo de profil utilisateur" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuLiporPP0sZHeFsSv021Xjjov2s8ch_05dGdPQVkTlG9NjJXM60eP9-BA17rqKIy_2ikYHbms9APYapM4Q2e6sHz8jYeypBGnim7moThNlx65QdBfFnbOnIHKKlds5ew9_-Tea29sF_CSWRlsCKPzC4CibtpbSw-UkefyLF_YFgntK4caRM8K_EZgYVz3kAL1XtHy8aLIPRqQhtfWcyw2E2Nz4LUaMWxS9eKtdxDThSP7QgLQIGu9"/>
-          </div>
-        </div>
-      </header>
+      <CandidateNavbar />
 
       {/* Main Content */}
       <main className="flex-grow w-full max-w-max-width mx-auto px-margin-desktop py-12">
