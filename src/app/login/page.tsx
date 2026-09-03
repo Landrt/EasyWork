@@ -4,6 +4,8 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
+import { setSession } from "@/lib/session";
+
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,11 +29,22 @@ export default function AuthPage() {
           throw new Error(signInError.message || "Erreur de connexion");
         }
       }
-      // Success or Fallback Mock
+      // Enregistrer la session utilisateur
+      setSession({
+        id: email,
+        email: email,
+        name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
+        affiliateEnabled: false
+      });
       router.push("/dashboard");
     } catch (err: any) {
-      // Mock success for prototyping if backend is down
       console.warn("Auth failed, falling back to mock login for prototyping");
+      setSession({
+        id: email || "landry@easywork.com",
+        email: email || "landry@easywork.com",
+        name: email ? email.split("@")[0] : "Landry",
+        affiliateEnabled: false
+      });
       router.push("/dashboard");
     }
   };

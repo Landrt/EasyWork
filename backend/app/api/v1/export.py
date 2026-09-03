@@ -53,9 +53,9 @@ async def export_cv(request: ExportRequest):
             # Injection sécurisée des données
             await page.add_init_script(f"window.cvData = {cv_data_json};")
             
-            # Navigation avec timeout strict
-            await page.goto(print_url, wait_until="networkidle", timeout=15000)
-            await page.wait_for_timeout(300)
+            # Navigation sans blocage HMR dev
+            await page.goto(print_url, wait_until="domcontentloaded", timeout=10000)
+            await page.wait_for_timeout(800)
             
             pdf_bytes = await page.pdf(
                 format="A4",

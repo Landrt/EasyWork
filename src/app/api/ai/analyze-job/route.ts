@@ -13,37 +13,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Description de poste manquante ou invalide.' }, { status: 400 });
     }
 
-    if (jobDescription.length > 15000) {
-      return NextResponse.json({ error: 'Description de poste trop longue (max 15 000 caractères).' }, { status: 400 });
-    }
+    const sanitizedJobDesc = jobDescription.slice(0, 10000).trim();
+    const sanitizedCvData = cvData ? JSON.stringify(cvData).slice(0, 15000) : null;
 
-    const sanitizedJobDesc = jobDescription.slice(0, 15000).trim();
-    const sanitizedCvData = cvData ? JSON.stringify(cvData).slice(0, 20000) : null;
+    const systemPrompt = `Tu es un auditeur de recrutement et parseur ATS ultra-rigoureux.
+Tu analyses le CV RÉEL du candidat face à une OFFRE D'EMPLOI.
 
-    const systemPrompt = `Tu es un expert en recrutement ATS (Applicant Tracking System).
-Analyse l'offre d'emploi et le profil CV fournis, puis retourne UNIQUEMENT un objet JSON avec ce format exact :
+CONSIGNES STRICTES D'ANTI-HALLUCINATION :
+1. "strengths" (Points forts) : Ne cite QUE des compétences, technologies, diplômes ou expériences RÉELLEMENT mentionnés dans le profil du candidat ET demandés par l'offre. N'INVENTE AUCUN fait non présent dans le CV.
+2. "gaps" (Compétences manquantes) : Ne cite QUE des exigences explicitement demandées dans l'offre d'emploi mais que le candidat N'A PAS dans son CV.
+3. "keywords" : Les mots-clés stratégiques demandés dans l'offre d'emploi.
+4. "score" : Un pourcentage réaliste (0-100) calculé objectivement selon le taux de couverture des prérequis de l'offre par le CV.
+
+Format JSON strict à respecter :
 {
   "jobTitle": "Titre du poste extrait de l'offre",
-  "score": 68,
-  "scoreLabel": "Score modéré. Des optimisations ciblées sont nécessaires.",
+  "score": 75,
+  "scoreLabel": "Évaluation synthétique (ex: Très bon profil pour ce poste)",
   "strengths": [
-    { "skill": "Nom de la compétence", "detail": "Explication de pourquoi c'est un point fort" }
+    { "skill": "Compétence avérée du CV", "detail": "Présente dans le CV et répondant au besoin de l'offre" }
   ],
   "gaps": [
-    { "skill": "Compétence manquante", "detail": "Pourquoi c'est important pour ce poste" }
+    { "skill": "Compétence requise absente", "detail": "Exigée dans l'annonce mais absente du profil actuel" }
   ],
-  "keywords": ["mot-clé 1", "mot-clé 2"]
-}
-Le score doit être un nombre entre 0 et 100.
-Retourne au maximum 4 points forts et 4 manques.`;
+  "keywords": ["mot-clé 1", "mot-clé 2", "mot-clé 3"]
+}`;
 
-    const userPrompt = `OFFRE D'EMPLOI:
+    const userPrompt = `OFFRE D'EMPLOI CIBLÉE :
 ${sanitizedJobDesc}
 
-PROFIL DU CANDIDAT:
-${sanitizedCvData || 'Profil non disponible - analyser uniquement l\'offre.'}
+CV RÉEL DU CANDIDAT :
+${sanitizedCvData || 'Profil générique de base.'}
 
-Génère l'analyse de compatibilité.`;
+Produis l'analyse de concordance objective sans rien inventer.`;
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -58,7 +60,8 @@ Génère l'analyse de compatibilité.`;
           { role: 'user', content: userPrompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.5,
+        max_tokens: 1000,
+        temperature: 0.2,
       })
     });
 
@@ -69,16 +72,31 @@ Génère l'analyse de compatibilité.`;
     }
 
     const data = await response.json();
+    let rawContent = data.choices[0]?.message?.content || '';
+
+    // Nettoyage markdown
+    rawContent = rawContent.trim();
+    if (rawContent.startsWith('```json')) {
+      rawContent = rawContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (rawContent.startsWith('```')) {
+      rawContent = rawContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
     let result;
     try {
-      result = JSON.parse(data.choices[0].message.content);
+      result = JSON.parse(rawContent);
     } catch (e) {
-      return NextResponse.json({ error: 'Format de réponse invalide de l\'IA.' }, { status: 500 });
+      const match = rawContent.match(/\{[\s\S]*\}/);
+      if (match) {
+        result = JSON.parse(match[0]);
+      } else {
+        return NextResponse.json({ error: 'Format de réponse invalide de l\'IA.' }, { status: 500 });
+      }
     }
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Job analysis error:', error);
+    console.error('Analyze job error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

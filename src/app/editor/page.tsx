@@ -80,35 +80,134 @@ const EditorContent = () => {
   });
 
   useEffect(() => {
-    // Check if we have real imported data, otherwise keep placeholders
-    const stored = sessionStorage.getItem('importedProfile');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.name || (parsed.experiences && parsed.experiences.length > 0)) {
-          setCvData({
-            header: {
-              name: parsed.name || '',
-              title: parsed.title || 'Titre',
-              location: parsed.location || '',
-              email: parsed.email || '',
-              phone: parsed.phone || '',
-              summary: parsed.summary || ''
-            },
-            experience: parsed.experiences || [],
-            education: parsed.education || [],
-            skills: parsed.skills || [],
-            languages: parsed.languages || [],
-            interests: parsed.interests || [],
-            projects: parsed.projects || [],
-            customSections: parsed.customSections || []
-          });
+    const cvId = searchParams.get('id') || searchParams.get('cvId');
+
+    const loadRealCvData = async () => {
+      // 1. Tenter de charger le CV spécifique depuis le backend si un ID est fourni
+      if (cvId) {
+        try {
+          const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+          const res = await fetch(`${backendBase}/cvs/${cvId}`, { credentials: 'include' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.content && typeof data.content === 'object') {
+              setCvData(data.content);
+              sessionStorage.setItem('current_cv', JSON.stringify(data.content));
+              return;
+            } else if (data.title) {
+              setCvData((prev: any) => {
+                const updated = {
+                  ...prev,
+                  header: { ...prev.header, title: data.title }
+                };
+                sessionStorage.setItem('current_cv', JSON.stringify(updated));
+                return updated;
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('Could not fetch CV by ID from backend', err);
         }
-      } catch (e) {
-        console.error('Failed to parse profile in Editor', e);
+
+        // Vérifier dans le stockage local des CVs
+        const localCvs = localStorage.getItem('my_cvs');
+        if (localCvs) {
+          try {
+            const parsedList = JSON.parse(localCvs);
+            const found = parsedList.find((c: any) => String(c.id) === String(cvId));
+            if (found && found.content) {
+              setCvData(found.content);
+              sessionStorage.setItem('current_cv', JSON.stringify(found.content));
+              return;
+            }
+          } catch (e) {}
+        }
       }
+
+      // 2. Vérifier le profil candidat en session ou en base
+      const stored = sessionStorage.getItem('importedProfile') || sessionStorage.getItem('current_cv');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.header || parsed.name || (parsed.experiences && parsed.experiences.length > 0) || (parsed.experience && parsed.experience.length > 0)) {
+            const normalized = {
+              header: parsed.header || {
+                name: parsed.name || '',
+                title: parsed.title || 'Titre professionnel',
+                location: parsed.location || '',
+                email: parsed.email || '',
+                phone: parsed.phone || '',
+                summary: parsed.summary || ''
+              },
+              experience: parsed.experience || parsed.experiences || [],
+              education: parsed.education || [],
+              skills: parsed.skills || [],
+              languages: parsed.languages || [],
+              interests: parsed.interests || [],
+              projects: parsed.projects || [],
+              customSections: parsed.customSections || []
+            };
+            setCvData(normalized);
+            sessionStorage.setItem('current_cv', JSON.stringify(normalized));
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to parse profile in Editor', e);
+        }
+      }
+
+      // 3. Charger le profil candidat réel depuis le backend
+      try {
+        const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+        const res = await fetch(`${backendBase}/profile`, { credentials: 'include' });
+        if (res.ok) {
+          const prof = await res.json();
+          if (prof.headline || (prof.experiences && prof.experiences.length > 0)) {
+            const realData = {
+              header: {
+                name: prof.user?.email ? prof.user.email.split('@')[0] : 'Mon Profil',
+                title: prof.headline || 'Titre professionnel',
+                location: prof.location || '',
+                email: prof.user?.email || '',
+                phone: prof.phone || '',
+                summary: prof.summary || ''
+              },
+              experience: (prof.experiences || []).map((exp: any, idx: number) => ({
+                id: exp.id || `exp-${idx}`,
+                title: exp.title || '',
+                company: exp.company || '',
+                location: exp.location || '',
+                dates: exp.dates || '',
+                highlights: exp.highlights || []
+              })),
+              education: (prof.education || []).map((edu: any, idx: number) => ({
+                id: edu.id || `edu-${idx}`,
+                degree: edu.degree || '',
+                school: edu.school || '',
+                dates: edu.dates || ''
+              })),
+              skills: (prof.skills || []).map((s: any) => typeof s === 'string' ? s : s.name),
+              languages: (prof.languages || []).map((l: any) => typeof l === 'string' ? l : `${l.name} - ${l.level}`),
+              interests: [],
+              projects: [],
+              customSections: []
+            };
+            setCvData(realData);
+            sessionStorage.setItem('current_cv', JSON.stringify(realData));
+          }
+        }
+      } catch (e) {}
+    };
+
+    loadRealCvData();
+  }, [searchParams]);
+
+  // Synchroniser les changements du CV dans la session pour l'analyse
+  useEffect(() => {
+    if (cvData) {
+      sessionStorage.setItem('current_cv', JSON.stringify(cvData));
     }
-  }, []);
+  }, [cvData]);
 
   const openTemplateModal = () => {
     setShowTemplateModal(true);
@@ -121,7 +220,12 @@ const EditorContent = () => {
       const res = await fetch('/api/ai/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ experience: cvData.experience })
+        body: JSON.stringify({
+          cvTitle: cvData.header.title,
+          summary: cvData.header.summary,
+          experience: cvData.experience,
+          skills: cvData.skills
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur inconnue');
@@ -134,17 +238,55 @@ const EditorContent = () => {
     }
   };
 
-  const handleAccept = (id: string, expId: number, pointIndex: number, newText: string) => {
-    // Mettre à jour la suggestion
+  const handleAccept = (id: string, expId: any, pointIndex: any, newText: string) => {
+    // 1. Mettre à jour l'état de la suggestion
     setSuggestions(prev => prev.map(s => s.id === id ? { ...s, accepted: true } : s));
-    
-    // Mettre à jour le CV data
-    const newExperience = [...cvData.experience];
-    const expIndex = newExperience.findIndex(e => e.id === expId);
-    if (expIndex !== -1 && newExperience[expIndex].highlights[pointIndex] !== undefined) {
-      newExperience[expIndex].highlights[pointIndex] = newText;
-      setCvData({ ...cvData, experience: newExperience });
-    }
+
+    // 2. Mettre à jour les données du CV de façon tolérante et réactive
+    setCvData((prevCvData: any) => {
+      const expList = Array.isArray(prevCvData.experience) ? [...prevCvData.experience] : [];
+      if (expList.length === 0) return prevCvData;
+
+      // Recherche par ID tolérante (string ou number)
+      let targetIdx = expList.findIndex(e => String(e.id) === String(expId) || e.id === expId);
+
+      // Si non trouvé, tentative par index direct (si expId est 0 ou 1 ou 1-based)
+      if (targetIdx === -1) {
+        const numExpId = Number(expId);
+        if (!isNaN(numExpId)) {
+          if (numExpId >= 0 && numExpId < expList.length) {
+            targetIdx = numExpId;
+          } else if (numExpId > 0 && numExpId - 1 < expList.length) {
+            targetIdx = numExpId - 1;
+          }
+        }
+      }
+
+      // Si toujours non trouvé, cibler la première expérience
+      if (targetIdx === -1) {
+        targetIdx = 0;
+      }
+
+      const targetExp = { ...expList[targetIdx] };
+      const currentHighlights = Array.isArray(targetExp.highlights) ? [...targetExp.highlights] : [];
+      const pIdx = Number(pointIndex);
+
+      if (!isNaN(pIdx) && pIdx >= 0 && pIdx < currentHighlights.length) {
+        currentHighlights[pIdx] = newText;
+      } else if (currentHighlights.length > 0) {
+        currentHighlights[0] = newText;
+      } else {
+        currentHighlights.push(newText);
+      }
+
+      targetExp.highlights = currentHighlights;
+      expList[targetIdx] = targetExp;
+
+      return {
+        ...prevCvData,
+        experience: expList
+      };
+    });
   };
 
   const handleDismiss = (id: string) => {
@@ -426,24 +568,34 @@ const EditorContent = () => {
 
             {suggestions.filter(s => !s.dismissed).map(s => (
               <div key={s.id} className={`border rounded p-4 bg-surface relative before:absolute before:left-0 before:top-4 before:bottom-4 before:w-[2px] ${s.accepted ? 'border-success-green before:bg-success-green' : 'border-parchment-border before:bg-clay-accent'}`}>
-                <div className="flex gap-2 items-start mb-3">
+                <div className="flex gap-2 items-start mb-2.5">
                   <span className={`material-symbols-outlined text-[18px] mt-0.5 ${s.accepted ? 'text-success-green' : 'text-clay-accent'}`}>{s.icon || 'tips_and_updates'}</span>
                   <div>
-                    <p className="text-label-sm font-label-sm uppercase tracking-wide text-on-surface mb-1">{s.title}</p>
+                    <p className="text-label-sm font-label-sm uppercase tracking-wide text-on-surface mb-0.5">{s.title}</p>
                     <p className="text-caption font-caption text-on-surface-variant">{s.description}</p>
                   </div>
                 </div>
-                <div className="bg-surface-container-low p-3 rounded border border-parchment-border mb-3 text-body-md font-body-md text-on-surface italic text-sm">
-                  {s.suggestion}
+
+                {s.originalText && (
+                  <div className="mb-2 p-2 rounded bg-surface-container-low/70 border border-parchment-border/70 text-xs">
+                    <span className="text-[10px] uppercase font-bold text-on-surface-variant block mb-0.5">Sur votre CV :</span>
+                    <p className="text-on-surface line-through opacity-70 italic text-xs leading-relaxed">{s.originalText}</p>
+                  </div>
+                )}
+
+                <div className="bg-surface-container-low p-2.5 rounded border border-parchment-border mb-3 text-body-md font-body-md text-on-surface text-sm">
+                  <span className="text-[10px] uppercase font-bold text-success-green block mb-0.5">Proposition améliorée :</span>
+                  <p className="font-medium text-xs leading-relaxed">{s.suggestion}</p>
                 </div>
+
                 {s.accepted ? (
-                  <p className="text-label-sm font-label-sm text-success-green flex items-center gap-1">
+                  <p className="text-label-sm font-label-sm text-success-green flex items-center gap-1 font-semibold">
                     <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                    Accepté et appliqué
+                    Appliqué sur votre CV
                   </p>
                 ) : (
                   <div className="flex gap-2">
-                    <button className="flex-1 py-1.5 px-3 bg-success-green text-on-primary rounded text-label-sm font-label-sm uppercase hover:bg-opacity-90 transition-colors" onClick={() => handleAccept(s.id, s.expId, s.pointIndex, s.suggestion)}>Accepter</button>
+                    <button className="flex-1 py-1.5 px-3 bg-success-green text-on-primary rounded text-label-sm font-label-sm uppercase hover:bg-opacity-90 transition-colors font-bold" onClick={() => handleAccept(s.id, s.expId, s.pointIndex, s.suggestion)}>Accepter et remplacer</button>
                     <button className="py-1.5 px-3 bg-transparent border border-parchment-border text-on-surface-variant rounded text-label-sm font-label-sm uppercase hover:bg-surface-container-low transition-colors" onClick={() => handleDismiss(s.id)}>Ignorer</button>
                   </div>
                 )}

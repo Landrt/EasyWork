@@ -13,38 +13,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Format de réponses invalide.' }, { status: 400 });
     }
 
-    if (answers.length > 10) {
+    // Limite stricte à 3 questions max pour un QRO ultra-rapide et dynamique
+    if (answers.length >= 3) {
       return NextResponse.json({ done: true });
     }
 
-    const sanitizedAnswers = answers.slice(0, 10).map((a: any) => ({
-      question: String(a.question || '').slice(0, 300),
-      answer: String(a.answer || '').slice(0, 500)
+    const sanitizedAnswers = answers.map((a: any) => ({
+      question: String(a.question || '').slice(0, 150),
+      answer: String(a.answer || '').slice(0, 200)
     }));
 
-    const systemPrompt = `Tu es un assistant de personnalisation pour un outil de création de CV professionnel.
-Tu dois poser des questions courtes et pertinentes pour mieux comprendre le profil de l'utilisateur et personnaliser son CV.
+    const systemPrompt = `Assistant QRO pour création de CV professionnel.
+Pose UNE question courte avec 4 options max pour affiner le profil du candidat.
+Réponses reçues (${sanitizedAnswers.length}/3) :
+${sanitizedAnswers.map((a: any, i: number) => `Q${i+1}: ${a.question} -> ${a.answer}`).join('\n')}
 
-L'utilisateur a déjà répondu à ${sanitizedAnswers.length} question(s). Les réponses précédentes sont :
-${sanitizedAnswers.map((a: any, i: number) => `Q${i+1}: "${a.question}" → Réponse: "${a.answer}"`).join('\n')}
-
-Si tu as déjà collecté 3 réponses ou suffisamment d'informations (objectif, secteur, niveau), retourne { "done": true }.
-
-Sinon, génère la prochaine question la plus pertinente pour personnaliser le CV. 
-Retourne UNIQUEMENT un objet JSON avec ce format :
+Format JSON strict :
 {
   "done": false,
-  "question": "La question à poser (courte, directe)",
-  "type": "radio" ou "text",
-  "options": ["option1", "option2", "option3", "option4"] (si type = radio, sinon null),
-  "placeholder": "Texte d'exemple si type = text" (sinon null)
-}
-
-Exemples de questions utiles (à adapter selon les réponses précédentes) :
-- Quel est votre secteur d'activité ?
-- Quel niveau d'expérience avez-vous ? (Junior / Confirmé / Senior / Expert)
-- Avez-vous des compétences techniques spécifiques à mettre en avant ?
-- Dans quel type d'entreprise souhaitez-vous travailler ?`;
+  "question": "Question courte et percutante",
+  "type": "radio",
+  "options": ["Option 1", "Option 2", "Option 3", "Autre"],
+  "placeholder": null
+}`;
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -56,10 +47,11 @@ Exemples de questions utiles (à adapter selon les réponses précédentes) :
         model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Génère la prochaine question.' }
+          { role: 'user', content: 'Prochaine question rapide.' }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.6,
+        max_tokens: 150,
+        temperature: 0.3,
       })
     });
 
