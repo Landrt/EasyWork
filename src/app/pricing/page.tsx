@@ -48,7 +48,7 @@ export default function PricingPage() {
               Connexion
             </Link>
           </nav>
-          <Link href="/login" className="bg-success-green text-on-primary font-label-md text-label-md px-6 py-3 rounded hover:opacity-90 transition-opacity flex items-center gap-2">
+          <Link href="/signup" className="bg-success-green text-on-primary font-label-md text-label-md px-6 py-3 rounded hover:opacity-90 transition-opacity flex items-center gap-2">
             Créer mon CV
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </Link>
