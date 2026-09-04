@@ -89,18 +89,20 @@ def run_suite():
             log_error("Échec de l'étape 2 du QRO")
             all_passed = False
 
-        # Fin après 3 réponses
-        code, res = http_post(f"{FRONTEND_URL}/api/ai/onboarding", {
+        # Test Génération de CV complet (/api/ai/generate-cv)
+        code, cv_res = http_post(f"{FRONTEND_URL}/api/ai/generate-cv", {
             "answers": [
-                {"question": "Objectif", "answer": "Recherche active"},
-                {"question": "Domaine", "answer": "Informatique, Tech"},
-                {"question": "Niveau", "answer": "Senior (6-10 ans)"}
-            ]
+                {"question": "Objectif et métier", "answer": "Je suis Développeur Full Stack Senior avec 5 ans d'expérience."},
+                {"question": "Réalisations", "answer": "Refonte d'une plateforme SaaS en React et FastAPI avec 50k utilisateurs actifs."}
+            ],
+            "candidateName": "Marc Testeur",
+            "candidateEmail": "marc@test.com"
         })
-        if code == 200 and res.get("done") is True:
-            log_success("QRO finalisé avec succès à 3 questions (done: true, redirection éditeur)")
+        if code == 200 and "cvData" in cv_res and "experience" in cv_res["cvData"]:
+            gen_cv = cv_res["cvData"]
+            log_success(f"Génération automatique du CV réussie : {gen_cv['header']['title']} ({len(gen_cv['experience'])} exp, {len(gen_cv['skills'])} compétences)")
         else:
-            log_error(f"Le QRO ne s'est pas terminé après 3 questions: {res}")
+            log_error(f"Échec de la génération automatique du CV : {cv_res}")
             all_passed = False
     except Exception as e:
         log_error(f"Erreur test QRO : {e}")

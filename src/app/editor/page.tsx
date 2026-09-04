@@ -25,6 +25,21 @@ const EditorContent = () => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templateFromUrl || 'modern');
 
+  // QRO Modal / Drawer in Editor
+  const [showQroModal, setShowQroModal] = useState(false);
+  const [qroAnswers, setQroAnswers] = useState<any[]>([]);
+  const [qroCurrentQuestion, setQroCurrentQuestion] = useState(
+    "Bonjour ! Parlez-moi de votre métier, vos principales réalisations et le poste que vous visez."
+  );
+  const [qroPlaceholder, setQroPlaceholder] = useState(
+    "Exemple : Je suis Développeur Full Stack avec 4 ans d'expérience chez X. J'ai réalisé des projets en React/Node..."
+  );
+  const [qroInput, setQroInput] = useState('');
+  const [qroLoading, setQroLoading] = useState(false);
+  const [qroGenerating, setQroGenerating] = useState(false);
+  const [qroScore, setQroScore] = useState(30);
+  const [qroSuccessMsg, setQroSuccessMsg] = useState<string | null>(null);
+
   // Editor States
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [newCustomTitle, setNewCustomTitle] = useState('');
@@ -293,6 +308,71 @@ const EditorContent = () => {
     setSuggestions(prev => prev.map(s => s.id === id ? { ...s, dismissed: true } : s));
   };
 
+  const handleSendQro = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanAnswer = qroInput.trim();
+    if (!cleanAnswer || qroLoading || qroGenerating) return;
+
+    const newAnswer = { question: qroCurrentQuestion, answer: cleanAnswer };
+    const updated = [...qroAnswers, newAnswer];
+    setQroAnswers(updated);
+    setQroInput('');
+    setQroLoading(true);
+
+    try {
+      const res = await fetch('/api/ai/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: updated })
+      });
+      const data = await res.json();
+      if (data.comprehensionScore) setQroScore(data.comprehensionScore);
+
+      if (data.done || updated.length >= 4) {
+        setQroScore(100);
+        await handleGenerateFromQro(updated);
+      } else if (data.question) {
+        setQroCurrentQuestion(data.question);
+        if (data.placeholder) setQroPlaceholder(data.placeholder);
+      } else {
+        await handleGenerateFromQro(updated);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setQroLoading(false);
+    }
+  };
+
+  const handleGenerateFromQro = async (answersToUse: any[]) => {
+    setQroGenerating(true);
+    try {
+      const res = await fetch('/api/ai/generate-cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          answers: answersToUse,
+          candidateName: cvData.header.name || 'Mon Profil',
+          candidateEmail: cvData.header.email || 'contact@email.com'
+        })
+      });
+      const data = await res.json();
+      if (data.cvData) {
+        setCvData(data.cvData);
+        sessionStorage.setItem('current_cv', JSON.stringify(data.cvData));
+        setQroSuccessMsg('✓ Votre CV a été entièrement rédigé et appliqué !');
+        setTimeout(() => {
+          setShowQroModal(false);
+          setQroSuccessMsg(null);
+        }, 1500);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setQroGenerating(false);
+    }
+  };
+
   const handleExport = async () => {
     setExportStatus('Génération du PDF de haute qualité par l\'IA...');
     try {
@@ -406,7 +486,14 @@ const EditorContent = () => {
               <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-label-sm font-label-sm uppercase tracking-wide" href="/affiliate">Affilié</Link>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button 
+              className="flex items-center gap-2 px-3.5 py-2 bg-surface-container-low border border-parchment-border rounded hover:border-ink transition-colors text-label-sm font-label-sm uppercase font-medium" 
+              onClick={() => setShowQroModal(true)}
+            >
+              <span className="material-symbols-outlined text-[18px] text-clay-accent">psychology</span>
+              Assistant QRO
+            </button>
             <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-transparent border border-clay-accent rounded hover:bg-surface-container-low transition-colors text-label-sm font-label-sm uppercase" onClick={openTemplateModal}>
               <span className="material-symbols-outlined text-[18px]">palette</span>
               Changer de template
@@ -661,6 +748,132 @@ const EditorContent = () => {
                 Sans template (Fond blanc)
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* QRO Conversational Assistant Modal / Split Drawer */}
+      {showQroModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-ink/50 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-surface rounded-xl border border-parchment-border shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-parchment-border flex justify-between items-center bg-surface-container-low">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-[22px] text-clay-accent">psychology</span>
+                <div>
+                  <h2 className="text-headline-md font-headline-md text-ink">Assistant QRO</h2>
+                  <p className="text-caption font-caption text-on-surface-variant">L&apos;IA comprend vos réponses ouvertes et rédige votre CV complet</p>
+                </div>
+              </div>
+              <button className="text-on-surface-variant hover:text-primary transition-colors p-1" onClick={() => setShowQroModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Comprehension Bar */}
+            <div className="px-6 pt-4 pb-2 bg-surface">
+              <div className="flex items-center justify-between text-xs text-on-surface-variant mb-1 font-medium">
+                <span>Compréhension du profil</span>
+                <span>{qroScore}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-ink transition-all duration-500 rounded-full"
+                  style={{ width: `${qroScore}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Conversation Stream */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {qroAnswers.map((a, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex gap-2.5 items-start">
+                    <div className="w-7 h-7 rounded-full bg-surface-container-high border border-parchment-border flex items-center justify-center text-xs text-ink flex-shrink-0">
+                      <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                    </div>
+                    <div className="bg-surface-container-low p-3.5 rounded-lg rounded-tl-none max-w-[85%] text-xs text-ink border border-parchment-border">
+                      {a.question}
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5 items-start justify-end">
+                    <div className="bg-ink text-surface p-3.5 rounded-lg rounded-tr-none max-w-[85%] text-xs">
+                      {a.answer}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {!qroGenerating && (
+                <div className="flex gap-2.5 items-start">
+                  <div className="w-7 h-7 rounded-full bg-surface-container-high border border-parchment-border flex items-center justify-center text-xs text-ink flex-shrink-0">
+                    <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                  </div>
+                  <div className="bg-surface-container-low p-3.5 rounded-lg rounded-tl-none max-w-[85%] text-sm font-medium text-ink border border-parchment-border">
+                    {qroCurrentQuestion}
+                  </div>
+                </div>
+              )}
+
+              {qroLoading && (
+                <div className="flex items-center gap-2 text-caption text-on-surface-variant italic py-2 animate-pulse">
+                  <span className="material-symbols-outlined text-[16px] animate-spin">autorenew</span>
+                  <span>L&apos;IA analyse vos informations...</span>
+                </div>
+              )}
+
+              {qroGenerating && (
+                <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
+                  <span className="material-symbols-outlined text-[36px] text-clay-accent animate-spin">auto_awesome</span>
+                  <p className="text-sm font-medium text-ink">Génération et mise en page complète de votre CV...</p>
+                </div>
+              )}
+
+              {qroSuccessMsg && (
+                <div className="p-3 bg-success-green/10 border border-success-green text-success-green text-xs rounded text-center font-bold">
+                  {qroSuccessMsg}
+                </div>
+              )}
+            </div>
+
+            {/* Input Zone */}
+            {!qroGenerating && (
+              <div className="p-4 border-t border-parchment-border bg-surface-container-low flex flex-col gap-2">
+                <textarea
+                  rows={2}
+                  className="w-full p-2.5 bg-surface border border-parchment-border rounded-lg text-xs text-ink placeholder:text-outline-variant focus:border-ink focus:ring-0 resize-none"
+                  placeholder={qroPlaceholder}
+                  value={qroInput}
+                  onChange={(e) => setQroInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendQro();
+                    }
+                  }}
+                  disabled={qroLoading}
+                ></textarea>
+                <div className="flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateFromQro(qroAnswers)}
+                    className="text-[11px] text-on-surface-variant hover:text-ink underline"
+                    disabled={qroAnswers.length === 0}
+                  >
+                    Générer maintenant avec ce que j&apos;ai écrit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendQro()}
+                    disabled={!qroInput.trim() || qroLoading}
+                    className="px-4 py-2 bg-success-green text-on-primary rounded text-label-sm font-label-sm uppercase hover:opacity-90 transition-opacity flex items-center gap-1.5 disabled:opacity-40"
+                  >
+                    <span>Envoyer</span>
+                    <span className="material-symbols-outlined text-[14px]">send</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

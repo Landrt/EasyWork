@@ -58,69 +58,56 @@ def run():
     ok(f"L'utilisateur saisit : Nom='{user_name}', Email='{user_email}', Mot de passe=******")
     ok("Formulaire soumis : compte créé avec succès, redirection vers l'onboarding.")
 
-    # ÉTAPE 3 : Questionnaire QRO Flash (3 étapes)
-    step("3. Questionnaire Flash QRO (/onboarding)")
-    # Question 1
-    q1_answer = {"question": "Quel est votre objectif professionnel actuel ?", "answer": "Recherche active d'un nouveau poste"}
-    ok(f"Question 1 : Choix = '{q1_answer['answer']}' (Transition 0 ms)")
+    # ÉTAPE 3 : Questionnaire QRO Ouvert & Intelligent
+    step("3. Questionnaire QRO Conversationnel & Ouvert (/onboarding)")
+    # Question 1 (Réponse ouverte)
+    q1_answer = {
+        "question": "Bonjour ! Parlez-moi de vous en quelques phrases : quel est votre métier actuel, votre niveau d'expérience et quel poste ou opportunité visez-vous ?",
+        "answer": "Je suis Responsable Communication & Marketing Digital avec 4 ans d'expérience chez MediaWave. Je pilote des campagnes Meta et Google Ads, et je vise un poste confirmé de Responsable Marketing."
+    }
+    ok(f"Question 1 : Sophie écrit librement sa réponse ouverte.")
     
-    # Question 2
-    q2_answer = {"question": "Dans quel domaine d'activité souhaitez-vous postuler ?", "answer": "Marketing, Communication & Ventes"}
-    ok(f"Question 2 : Choix = '{q2_answer['answer']}' (Transition 0 ms)")
-
-    # Question 3
-    q3_answer = {"question": "Quel est votre niveau d'expérience global ?", "answer": "Intermédiaire (3 à 5 ans)"}
-    ok(f"Question 3 : Choix = '{q3_answer['answer']}' (Transition 0 ms)")
-
-    # Appel de clôture
+    # Appel de l'IA pour évaluer la complétude
     req_qro = urllib.request.Request(
         f"{FRONTEND_URL}/api/ai/onboarding",
-        data=json.dumps({"answers": [q1_answer, q2_answer, q3_answer]}).encode('utf-8'),
+        data=json.dumps({"answers": [q1_answer]}).encode('utf-8'),
         headers={"Content-Type": "application/json"}
     )
     with urllib.request.urlopen(req_qro) as resp:
-        data = json.loads(resp.read().decode('utf-8'))
-        assert data.get("done") is True
-        ok("QRO terminé : 'done: true' reçu, redirection instantanée vers l'éditeur /editor !")
+        qro_data = json.loads(resp.read().decode('utf-8'))
+        ok(f"L'IA évalue le profil (Score : {qro_data.get('comprehensionScore', 60)}%) : '{qro_data.get('question')}'")
+
+    # Question 2 (Précision des réalisations et outils)
+    q2_answer = {
+        "question": qro_data.get("question", "Quelles sont vos principales réalisations et compétences ?"),
+        "answer": "J'ai géré les campagnes publicitaires Meta et Google Ads avec un ROI de +35%, refondu le blog et la newsletter, et je maîtrise le SEO, Google Analytics 4 et Meta Ads. J'ai un Master Marketing de l'IAE Lyon."
+    }
+    ok(f"Question 2 : Sophie complète avec ses réalisations chiffrées et son diplôme.")
+
+    # Synthèse et génération automatique du CV
+    step("3bis. Génération automatique du CV complet par l'IA (/api/ai/generate-cv)")
+    req_gen = urllib.request.Request(
+        f"{FRONTEND_URL}/api/ai/generate-cv",
+        data=json.dumps({
+            "answers": [q1_answer, q2_answer],
+            "candidateName": user_name,
+            "candidateEmail": user_email
+        }).encode('utf-8'),
+        headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req_gen) as resp:
+        gen_data = json.loads(resp.read().decode('utf-8'))
+        candidate_cv = gen_data.get("cvData")
+        assert candidate_cv is not None, "Échec de génération du CV"
+        ok(f"CV COMPLET généré par l'IA : '{candidate_cv['header']['title']}'")
+        ok(f"  → Résumé : {candidate_cv['header']['summary'][:60]}...")
+        ok(f"  → Expériences créées : {len(candidate_cv['experience'])} postes réels")
+        ok(f"  → Compétences structurées : {', '.join(candidate_cv['skills'][:5])}")
+        ok("Le candidat arrive sur l'éditeur avec son CV déjà 100% rédigé et prêt !")
 
     # ÉTAPE 4 : Dans l'Éditeur (/editor) & Assistant Éditorial
     step("4. Travail dans l'Éditeur (/editor) & Assistant Éditorial IA")
-    candidate_cv = {
-        "header": {
-            "name": user_name,
-            "title": "Responsable Communication & Marketing Digital",
-            "location": "Lyon, France",
-            "email": user_email,
-            "phone": "+33 6 88 99 00 11",
-            "summary": "Professionnelle du marketing digital spécialisée dans l'acquisition multicanale et la stratégie de contenu."
-        },
-        "experience": [
-            {
-                "id": "exp-sophie-1",
-                "title": "Chargée de Communication Digitale",
-                "company": "Agence MediaWave",
-                "location": "Lyon",
-                "dates": "2021 - Présent",
-                "highlights": [
-                    "Gestion des campagnes publicitaires sur Facebook et LinkedIn.",
-                    "Création de contenus pour le blog et la newsletter mensuelle."
-                ]
-            }
-        ],
-        "education": [
-            {
-                "id": "edu-sophie-1",
-                "degree": "Master Marketing & Communication",
-                "school": "IAE Lyon",
-                "dates": "2019 - 2021"
-            }
-        ],
-        "skills": ["Marketing Digital", "SEO", "Google Ads", "Meta Ads", "Content Strategy"],
-        "languages": ["Français - Langue maternelle", "Anglais - Professionnel"],
-        "interests": [],
-        "projects": []
-    }
-    ok(f"Le CV de {user_name} est chargé dans l'éditeur avec ses 2 réalisations d'agence.")
+    ok(f"Le CV de {user_name} généré par l'IA est prêt dans l'éditeur ({len(candidate_cv['experience'])} expériences).")
 
     # Appel de l'assistant éditorial
     ok("Clic sur 'Générer des suggestions' dans l'Assistant Éditorial...")
