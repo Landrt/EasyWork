@@ -4,15 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApi } from '@/lib/api';
+import { getSession, getCandidateName, setCandidateName } from '@/lib/session';
 import CandidateNavbar from '@/components/CandidateNavbar';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { fetch: apiFetch, fetchRaw } = useApi();
 
-  const [firstName, setFirstName] = useState('Jean');
-  const [lastName, setLastName] = useState('Dupont');
-  const [email, setEmail] = useState('jean.dupont@example.com');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,16 +21,32 @@ export default function SettingsPage() {
   const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
 
+  useEffect(() => {
+    const session = getSession();
+    const fullName = getCandidateName() || session?.name || '';
+    if (fullName) {
+      const parts = fullName.trim().split(' ');
+      setFirstName(parts[0] || '');
+      setLastName(parts.slice(1).join(' ') || '');
+    }
+    if (session?.email) {
+      setEmail(session.email);
+    }
+  }, []);
+
   const handleSaveProfile = async () => {
     setProfileStatus('Enregistrement...');
+    const updatedFullName = `${firstName} ${lastName}`.trim();
+    if (updatedFullName) {
+      setCandidateName(updatedFullName);
+    }
     try {
       if (process.env.NEXT_PUBLIC_API_URL) {
         await apiFetch('/account/profile', {
           method: 'PATCH',
-          body: JSON.stringify({ headline: `${firstName} ${lastName}`, professional_summary: '' }),
+          body: JSON.stringify({ headline: updatedFullName, professional_summary: '' }),
         });
       }
-      // Mock success if no API
       setProfileStatus('✓ Modifications enregistrées !');
     } catch (e: any) {
       setProfileStatus('✓ Modifications enregistrées (Mode local) !');

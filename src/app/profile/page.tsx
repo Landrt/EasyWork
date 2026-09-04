@@ -11,6 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getSession, getCandidateName, setCandidateName } from '@/lib/session';
 import CandidateNavbar from '@/components/CandidateNavbar';
 
 interface Experience {
@@ -48,22 +49,40 @@ export default function ProfilePage() {
 
   // Load data from sessionStorage (same source as /review and /import)
   useEffect(() => {
+    const candidateName = getCandidateName();
     const stored = sessionStorage.getItem('importedProfile');
     if (stored) {
       try {
-        setProfileData(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (!parsed.name && candidateName) {
+          parsed.name = candidateName;
+        }
+        setProfileData(parsed);
       } catch (e) {
         console.error('Failed to parse imported profile');
       }
+    } else if (candidateName) {
+      const session = getSession();
+      setProfileData(prev => ({
+        ...prev,
+        name: candidateName,
+        email: session?.email || prev.email
+      }));
     }
   }, []);
 
   const saveSection = () => {
+    if (profileData.name) {
+      setCandidateName(profileData.name);
+    }
     sessionStorage.setItem('importedProfile', JSON.stringify(profileData));
     setEditingSection(null);
   };
 
   const handleSave = () => {
+    if (profileData.name) {
+      setCandidateName(profileData.name);
+    }
     sessionStorage.setItem('importedProfile', JSON.stringify(profileData));
     router.push('/dashboard');
   };

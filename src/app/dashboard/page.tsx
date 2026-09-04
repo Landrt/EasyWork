@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession, getCandidateName } from "@/lib/session";
 import CandidateNavbar from "@/components/CandidateNavbar";
 
 interface CVItem {
@@ -31,18 +31,29 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [userName, setUserName] = useState("Landry");
+  const [userName, setUserName] = useState("Candidat");
   const [loading, setLoading] = useState(true);
   const [recentCvs, setRecentCvs] = useState<CVItem[]>([]);
   const [recentJobs, setRecentJobs] = useState<JobItem[]>([]);
 
   useEffect(() => {
-    const session = getSession();
-    if (session?.email) {
-      const part = session.email.split("@")[0];
-      setUserName(part.charAt(0).toUpperCase() + part.slice(1));
-    }
+    const syncUser = () => {
+      const session = getSession();
+      const resolved = getCandidateName() || session?.name;
+      if (resolved) {
+        setUserName(resolved);
+      } else if (session?.email) {
+        const part = session.email.split("@")[0];
+        setUserName(part.charAt(0).toUpperCase() + part.slice(1));
+      }
+    };
 
+    syncUser();
+    window.addEventListener("gencv-session", syncUser);
+    return () => window.removeEventListener("gencv-session", syncUser);
+  }, []);
+
+  useEffect(() => {
     const loadDashboardData = async () => {
       setLoading(true);
       try {

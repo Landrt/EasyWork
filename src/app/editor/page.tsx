@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useApi } from '@/lib/api';
 import { TEMPLATES, getTemplateComponent } from '@/components/templates';
+import { getCandidateName, setCandidateName } from '@/lib/session';
 
 // Mock cv ID - in production this comes from the URL params
 const MOCK_CV_ID = 1;
@@ -44,6 +45,22 @@ const EditorContent = () => {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [newCustomTitle, setNewCustomTitle] = useState('');
   const [newCustomColumn, setNewCustomColumn] = useState<'left' | 'main'>('main');
+  const [isEditingNameInline, setIsEditingNameInline] = useState(false);
+
+  const handleCandidateNameChange = (newName: string) => {
+    setCvData((prev: any) => {
+      const updated = {
+        ...prev,
+        header: {
+          ...prev.header,
+          name: newName
+        }
+      };
+      sessionStorage.setItem('current_cv', JSON.stringify(updated));
+      return updated;
+    });
+    setCandidateName(newName);
+  };
   
   const currentTemplateDef = TEMPLATES.find(t => t.id === selectedTemplate) || TEMPLATES[0];
   const sectionLabels: Record<string, string> = {
@@ -98,6 +115,8 @@ const EditorContent = () => {
     const cvId = searchParams.get('id') || searchParams.get('cvId');
 
     const loadRealCvData = async () => {
+      const candidateStoredName = getCandidateName();
+
       // 1. Tenter de charger le CV spécifique depuis le backend si un ID est fourni
       if (cvId) {
         try {
@@ -106,14 +125,22 @@ const EditorContent = () => {
           if (res.ok) {
             const data = await res.json();
             if (data.content && typeof data.content === 'object') {
-              setCvData(data.content);
-              sessionStorage.setItem('current_cv', JSON.stringify(data.content));
+              const loadedContent = { ...data.content };
+              if (loadedContent.header && (!loadedContent.header.name || loadedContent.header.name === 'Prénom Nom') && candidateStoredName) {
+                loadedContent.header.name = candidateStoredName;
+              }
+              setCvData(loadedContent);
+              sessionStorage.setItem('current_cv', JSON.stringify(loadedContent));
               return;
             } else if (data.title) {
               setCvData((prev: any) => {
                 const updated = {
                   ...prev,
-                  header: { ...prev.header, title: data.title }
+                  header: { 
+                    ...prev.header, 
+                    title: data.title,
+                    name: (prev.header.name === 'Prénom Nom' && candidateStoredName) ? candidateStoredName : prev.header.name
+                  }
                 };
                 sessionStorage.setItem('current_cv', JSON.stringify(updated));
                 return updated;
@@ -131,8 +158,12 @@ const EditorContent = () => {
             const parsedList = JSON.parse(localCvs);
             const found = parsedList.find((c: any) => String(c.id) === String(cvId));
             if (found && found.content) {
-              setCvData(found.content);
-              sessionStorage.setItem('current_cv', JSON.stringify(found.content));
+              const loaded = { ...found.content };
+              if (loaded.header && (!loaded.header.name || loaded.header.name === 'Prénom Nom') && candidateStoredName) {
+                loaded.header.name = candidateStoredName;
+              }
+              setCvData(loaded);
+              sessionStorage.setItem('current_cv', JSON.stringify(loaded));
               return;
             }
           } catch (e) {}
@@ -145,14 +176,19 @@ const EditorContent = () => {
         try {
           const parsed = JSON.parse(stored);
           if (parsed.header || parsed.name || (parsed.experiences && parsed.experiences.length > 0) || (parsed.experience && parsed.experience.length > 0)) {
+            const rawHeaderName = parsed.header?.name || parsed.name;
+            const resolvedName = (rawHeaderName && rawHeaderName !== 'Prénom Nom' && rawHeaderName !== 'Mon Profil')
+              ? rawHeaderName
+              : (candidateStoredName || rawHeaderName || 'Mon Profil');
+
             const normalized = {
-              header: parsed.header || {
-                name: parsed.name || '',
-                title: parsed.title || 'Titre professionnel',
-                location: parsed.location || '',
-                email: parsed.email || '',
-                phone: parsed.phone || '',
-                summary: parsed.summary || ''
+              header: {
+                name: resolvedName,
+                title: parsed.header?.title || parsed.title || 'Titre professionnel',
+                location: parsed.header?.location || parsed.location || '',
+                email: parsed.header?.email || parsed.email || '',
+                phone: parsed.header?.phone || parsed.phone || '',
+                summary: parsed.header?.summary || parsed.summary || ''
               },
               experience: parsed.experience || parsed.experiences || [],
               education: parsed.education || [],
@@ -178,9 +214,10 @@ const EditorContent = () => {
         if (res.ok) {
           const prof = await res.json();
           if (prof.headline || (prof.experiences && prof.experiences.length > 0)) {
+            const realName = candidateStoredName || (prof.user?.email ? prof.user.email.split('@')[0] : 'Mon Profil');
             const realData = {
               header: {
-                name: prof.user?.email ? prof.user.email.split('@')[0] : 'Mon Profil',
+                name: realName,
                 title: prof.headline || 'Titre professionnel',
                 location: prof.location || '',
                 email: prof.user?.email || '',
@@ -209,9 +246,21 @@ const EditorContent = () => {
             };
             setCvData(realData);
             sessionStorage.setItem('current_cv', JSON.stringify(realData));
+            return;
           }
         }
       } catch (e) {}
+
+      // 4. Fallback si aucun profil : injecter le nom d'inscription automatiquement
+      if (candidateStoredName) {
+        setCvData((prev: any) => ({
+          ...prev,
+          header: {
+            ...prev.header,
+            name: candidateStoredName
+          }
+        }));
+      }
     };
 
     loadRealCvData();
@@ -523,15 +572,18 @@ const EditorContent = () => {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {/* Header (Always Present) */}
-            <div className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-move hover:border-clay-accent transition-colors">
+            <div 
+              className="group flex items-center justify-between p-3 bg-surface border border-parchment-border rounded cursor-pointer hover:border-clay-accent transition-colors"
+              onClick={() => setEditingSection('header')}
+            >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
-                <div>
-                  <p className="text-label-md font-label-md text-on-surface">En-tête</p>
-                  <p className="text-caption font-caption text-on-surface-variant">Coordonnées & Titre</p>
+                <span className="material-symbols-outlined text-clay-accent text-[20px]">badge</span>
+                <div className="overflow-hidden">
+                  <p className="text-label-md font-label-md text-on-surface font-semibold truncate max-w-[170px]">{cvData.header.name || 'Nom complet'}</p>
+                  <p className="text-caption font-caption text-on-surface-variant truncate max-w-[170px]">{cvData.header.title || 'Modifier nom & titre'}</p>
                 </div>
               </div>
-              <button className="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" onClick={() => setEditingSection('header')}>
+              <button className="text-on-surface-variant group-hover:text-primary transition-colors p-1" title="Modifier l'en-tête">
                 <span className="material-symbols-outlined text-[18px]">edit</span>
               </button>
             </div>
@@ -594,7 +646,56 @@ const EditorContent = () => {
         </aside>
 
         {/* Center Pane: Live Preview (6 cols) */}
-        <section className="flex-1 overflow-y-auto bg-surface-container-low p-8 flex justify-center relative">
+        <section className="flex-1 overflow-y-auto bg-surface-container-low p-8 flex flex-col items-center relative">
+          {/* Quick Header Banner for Name & Identity */}
+          <div className="w-full max-w-[794px] mb-3 flex items-center justify-between px-4 py-2 bg-surface border border-parchment-border rounded shadow-sm text-xs text-on-surface-variant">
+            <div className="flex items-center gap-2 flex-1 mr-4">
+              <span className="material-symbols-outlined text-[18px] text-clay-accent">badge</span>
+              <span className="whitespace-nowrap font-medium text-ink">Candidat :</span>
+              {isEditingNameInline ? (
+                <div className="flex items-center gap-2 flex-1 max-w-sm">
+                  <input
+                    type="text"
+                    value={cvData.header.name}
+                    onChange={(e) => handleCandidateNameChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') setIsEditingNameInline(false);
+                    }}
+                    autoFocus
+                    placeholder="Votre nom complet..."
+                    className="w-full px-2 py-1 text-xs border border-ink rounded bg-background text-ink focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    onClick={() => setIsEditingNameInline(false)}
+                    className="px-2.5 py-1 bg-success-green text-on-primary rounded text-xs font-semibold hover:bg-tertiary-container transition-colors"
+                    title="Valider"
+                  >
+                    OK
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-ink font-semibold">{cvData.header.name || 'Non renseigné'}</span>
+                  <button
+                    onClick={() => setIsEditingNameInline(true)}
+                    className="text-primary hover:underline flex items-center gap-0.5 text-xs font-medium cursor-pointer"
+                    title="Cliquer pour modifier votre nom directement"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                    <span>Modifier</span>
+                  </button>
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={() => setEditingSection('header')}
+              className="text-on-surface-variant hover:text-ink flex items-center gap-1 font-medium bg-surface-container-low px-2.5 py-1 rounded border border-parchment-border transition-colors text-xs"
+            >
+              <span className="material-symbols-outlined text-[14px]">tune</span>
+              Toutes les coordonnées
+            </button>
+          </div>
+
           {/* Zoom Controls */}
           <div className="absolute bottom-8 right-8 flex flex-col gap-2 z-20">
             <button
@@ -895,7 +996,14 @@ const EditorContent = () => {
                 <div className="space-y-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-label-sm font-label-sm text-ink uppercase">Nom complet</label>
-                    <input type="text" className="border border-parchment-border rounded p-2 bg-surface text-ink" value={cvData.header.name} onChange={e => setCvData({...cvData, header: {...cvData.header, name: e.target.value}})} />
+                    <input 
+                      type="text" 
+                      className="border border-parchment-border rounded p-2 bg-surface text-ink focus:border-ink focus:ring-0" 
+                      value={cvData.header.name} 
+                      onChange={e => handleCandidateNameChange(e.target.value)} 
+                      placeholder="Jean Dupont"
+                    />
+                    <p className="text-[11px] text-on-surface-variant">Modifiable à tout moment si vous souhaitez ajuster ou remplacer le nom saisi lors de l&apos;inscription.</p>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-label-sm font-label-sm text-ink uppercase">Titre</label>

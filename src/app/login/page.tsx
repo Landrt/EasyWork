@@ -4,7 +4,7 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
-import { setSession } from "@/lib/session";
+import { setSession, getCandidateName, setCandidateName } from "@/lib/session";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -29,20 +29,28 @@ export default function AuthPage() {
           throw new Error(signInError.message || "Erreur de connexion");
         }
       }
-      // Enregistrer la session utilisateur
+      // Conserver le nom déjà personnalisé ou déduire un nom propre
+      const existingName = getCandidateName();
+      const resolvedName = existingName || (email ? email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1) : "Candidat");
+      setCandidateName(resolvedName);
+      if (email) localStorage.setItem('user_email', email);
       setSession({
         id: email,
         email: email,
-        name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
+        name: resolvedName,
         affiliateEnabled: false
       });
       router.push("/dashboard");
     } catch (err: any) {
       console.warn("Auth failed, falling back to mock login for prototyping");
+      const existingName = getCandidateName();
+      const fallbackName = existingName || (email ? email.split("@")[0] : "Landry");
+      setCandidateName(fallbackName);
+      if (email) localStorage.setItem('user_email', email);
       setSession({
         id: email || "landry@easywork.com",
         email: email || "landry@easywork.com",
-        name: email ? email.split("@")[0] : "Landry",
+        name: fallbackName,
         affiliateEnabled: false
       });
       router.push("/dashboard");

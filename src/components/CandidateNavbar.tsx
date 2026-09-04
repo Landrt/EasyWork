@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession, getCandidateName } from "@/lib/session";
 
 interface NavLinkItem {
   label: string;
@@ -23,16 +23,31 @@ export default function CandidateNavbar() {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [userName, setUserName] = useState("Landry");
-  const [userEmail, setUserEmail] = useState("landry@easywork.com");
+  const [userName, setUserName] = useState("Candidat");
+  const [userEmail, setUserEmail] = useState("candidat@easywork.com");
 
   useEffect(() => {
-    const session = getSession();
-    if (session?.email) {
-      setUserEmail(session.email);
-      const part = session.email.split("@")[0];
-      setUserName(part.charAt(0).toUpperCase() + part.slice(1));
-    }
+    const syncUser = () => {
+      const session = getSession();
+      const resolved = getCandidateName() || session?.name;
+      if (resolved) {
+        setUserName(resolved);
+      } else if (session?.email) {
+        const part = session.email.split("@")[0];
+        setUserName(part.charAt(0).toUpperCase() + part.slice(1));
+      }
+      if (session?.email) {
+        setUserEmail(session.email);
+      }
+    };
+
+    syncUser();
+    window.addEventListener("gencv-session", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener("gencv-session", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
   }, []);
 
   return (

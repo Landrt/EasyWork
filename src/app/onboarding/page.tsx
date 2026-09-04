@@ -3,20 +3,20 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getSession } from '@/lib/session';
+import { getSession, getCandidateName } from '@/lib/session';
 
 interface Answer {
   question: string;
   answer: string;
 }
 
-const FIRST_QUESTION = "Bonjour ! Parlez-moi de vous en quelques phrases : quel est votre métier actuel, votre niveau d'expérience et quel poste ou opportunité visez-vous ?";
-const FIRST_PLACEHOLDER = "Exemple : Je suis Développeur Full Stack avec 4 ans d'expérience chez X. J'ai réalisé des projets en React/Node et je cherche un poste de Lead Dev...";
+const FIRST_QUESTION = "Quel métier ou poste visez-vous actuellement, et quel est votre niveau d'expérience (junior, confirmé, senior) ?";
+const FIRST_PLACEHOLDER = "Ex : Développeur Full Stack avec 4 ans d'expérience sur React et Node.js...";
 
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const cvId = searchParams.get('cvId');
+  const cvId = searchParams.get('id') || searchParams.get('cvId');
   const template = searchParams.get('template') || 'modern';
   
   const [sessionUser, setSessionUser] = useState<any>(null);
@@ -48,13 +48,16 @@ function OnboardingContent() {
     setGeneratingCv(true);
     setError(null);
     try {
+      const candidateName = getCandidateName() || sessionUser?.name || 'Candidat';
+      const candidateEmail = sessionUser?.email || (typeof window !== 'undefined' ? localStorage.getItem('user_email') : '') || 'contact@email.com';
+
       const res = await fetch('/api/ai/generate-cv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           answers: finalAnswers,
-          candidateName: sessionUser?.name || 'Mon Profil',
-          candidateEmail: sessionUser?.email || 'contact@email.com'
+          candidateName,
+          candidateEmail
         })
       });
 

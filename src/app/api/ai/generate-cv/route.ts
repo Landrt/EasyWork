@@ -130,6 +130,15 @@ Format JSON strict à respecter :
       }
     }
 
+    if (cvData && cvData.header) {
+      if (candidateName && candidateName.trim()) {
+        cvData.header.name = candidateName.trim();
+      }
+      if (candidateEmail && candidateEmail.trim()) {
+        cvData.header.email = candidateEmail.trim();
+      }
+    }
+
     return NextResponse.json({ cvData });
   } catch (error: any) {
     console.error('Generate CV error:', error);

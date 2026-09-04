@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
-import { setSession } from '@/lib/session';
+import { setSession, setCandidateName } from '@/lib/session';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -35,19 +35,25 @@ export default function SignupPage() {
           throw new Error(signUpError.message || 'Erreur lors de la création du compte');
         }
       }
+      const resolvedName = name.trim() || email.split('@')[0];
+      setCandidateName(resolvedName);
+      if (email) localStorage.setItem('user_email', email);
       setSession({
         id: email,
         email: email,
-        name: name || email.split('@')[0],
+        name: resolvedName,
         affiliateEnabled: false
       });
       router.push('/onboarding');
     } catch (err: any) {
       console.warn("Auth failed, falling back to mock signup for prototyping");
+      const fallbackName = name.trim() || (email ? email.split('@')[0] : 'Candidat');
+      setCandidateName(fallbackName);
+      if (email) localStorage.setItem('user_email', email);
       setSession({
         id: email || 'candidat@easywork.com',
         email: email || 'candidat@easywork.com',
-        name: name || 'Candidat',
+        name: fallbackName,
         affiliateEnabled: false
       });
       router.push('/onboarding');
