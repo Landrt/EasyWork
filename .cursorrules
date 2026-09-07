@@ -1,0 +1,129 @@
+The Following is a next.js 15 project, react 19, typescript, shadcn ui, tailwind css project. It is an ai resume builder. 
+It is called "ResumeLM".
+
+
+Database Structure
+- Tables follow a relational structure with UUID primary keys and timestamps.
+
+Tables:
+1. profiles
+   - Stores user's base information and resume components
+   - Contains JSON fields for complex data (work_experience, education, skills, etc.)
+   - One-to-one relationship with auth.users
+
+2. jobs
+   - Stores job listings with requirements and details
+   - Public read access, user-specific write access
+   - Contains salary_range as JSONB for flexible structure
+   - Tracks application status and requirements
+
+3. resumes
+   - Stores both base and tailored resumes
+   - Links to jobs table for tailored resumes
+   - Contains same fields as profiles for resume content
+   - Uses JSONB for section_order and section_configs
+   - section_configs controls visibility and display of resume sections
+
+Key Relationships:
+- profiles.user_id → auth.users.id
+- resumes.user_id → auth.users.id
+- resumes.job_id → jobs.id (optional, for tailored resumes)
+
+JSON Fields Structure:
+- work_experience: Array of work history with descriptions and technologies
+- education: Array of educational background with achievements
+- skills: Array of skill categories with grouped items
+- projects: Array of projects with highlights and technologies
+- certifications: Array of professional certifications
+- section_configs: Object controlling section display properties
+
+Row Level Security (RLS):
+- profiles: User can only access own profile
+- jobs: Public read, user-specific write
+- resumes: User can only access own resumes
+
+Design System: Soft Gradient Minimalism
+
+Core Principles:
+- Layered Depth: Multiple translucent layers create visual hierarchy
+- Organic Motion: Subtle animations suggest liveliness without distraction
+- Purposeful White Space: Generous spacing improves content digestion
+- Consistent Interaction: Predictable hover and active states across components
+
+Visual Hierarchy:
+1. Background Layer
+   - Base: Neutral gradient (rose-50/50 → sky-50/50 → violet-50/50)
+   - Floating Orbs: Translucent gradients with slow animations
+   - Mesh Overlay: Subtle grid pattern (#8882)
+
+2. Content Layer
+   - Glass Cards: bg-white/40 with backdrop-blur-md
+   - Border: border-white/40
+   - Shadow: shadow-xl with backdrop-blur-xl
+
+3. Interactive Elements
+   - Hover State: Duration 500ms
+   - Transform: -translate-y-1
+   - Background Shift: bg-white/50
+
+Color Palette:
+Primary:
+  - Teal: from-teal-600 to-cyan-600
+  - Purple: from-purple-600 to-indigo-600 (Base Resumes)
+    - Accent: {
+      bg: "purple-50",
+      border: "purple-200",
+      hover: "purple-300",
+      text: "purple-600"
+    }
+  - Pink: from-pink-600 to-rose-600 (Tailored Resumes)
+    - Accent: {
+      bg: "pink-50",
+      border: "pink-200",
+      hover: "pink-300",
+      text: "pink-600"
+    }
+
+Background:
+  - Gradients: pink-200/20, violet-200/20, blue-200/20, teal-200/20
+  - Overlays: teal-50/10, cyan-50/10, purple-50/10, indigo-50/10
+
+Specific Resume Type Colors:
+- Base Resumes:
+  - Gradient: from-purple-600 to-indigo-600
+  - Icon Background: from-purple-600/10 to-indigo-600/10
+  - Border: border-purple-600/10
+  - Text: text-purple-600
+  - Hover States: purple-700
+
+- Tailored Resumes:
+  - Gradient: from-pink-600 to-rose-600
+  - Icon Background: from-pink-600/10 to-rose-600/10
+  - Border: border-pink-600/10
+  - Text: text-pink-600
+  - Hover States: pink-700
+
+Typography:
+- Headers: text-3xl, font-semibold with gradient text
+- Body: Base 16px, text-muted-foreground for secondary text
+- Font Stack: 'Inter', system-ui, -apple-system, sans-serif
+
+Animation Timings:
+- Hover Transitions: 500ms
+- Background Orbs: 8s/9s ease-in-out infinite
+- Transform Origin: Center
+
+Component Patterns:
+- Card Structure: rounded-2xl with nested content padding
+- Content Areas: Relative positioning with gradient overlays
+- Interactive Areas: Clear hover states with smooth transitions
+
+Responsive Behavior:
+- Mobile First: Base layout with single column
+- Breakpoints: md:p-8 lg:p-10 lg:grid-cols-12
+- Max Width: 2000px with centered content
+
+Z-Index Layers:
+- Background: z-0
+- Content: z-10
+- Overlays: Relative to parent
