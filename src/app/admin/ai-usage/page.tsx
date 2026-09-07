@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { AdminHeader } from '@/components/admin/admin-header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getAIUsageMetrics } from '@/utils/actions/admin/actions';
-import { AIUsageMetrics } from '@/lib/admin-types';
+import { getAIUsageMetrics, getRateLimitConfig, updateRateLimitConfig } from '@/utils/actions/admin/actions';
+import { AIUsageMetrics, RateLimitConfig } from '@/lib/admin-types';
 import { 
   Cpu, 
   Coins, 
@@ -13,20 +13,42 @@ import {
   AlertTriangle, 
   Zap, 
   Activity, 
-  Bot 
+  Bot,
+  ShieldAlert,
+  Sliders,
+  Save,
+  RotateCcw,
+  CheckCircle2,
+  ShieldCheck,
+  Database,
+  Clock
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 export default function AdminAIUsagePage() {
   const [metrics, setMetrics] = useState<AIUsageMetrics | null>(null);
+  const [rateLimit, setRateLimit] = useState<RateLimitConfig>({
+    capacity: 80,
+    durationHours: 5,
+    isEnabled: true,
+    isRedisConnected: false,
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingRateLimit, setIsSavingRateLimit] = useState(false);
 
   useEffect(() => {
-    async function loadMetrics() {
+    async function loadData() {
       setIsLoading(true);
       try {
-        const data = await getAIUsageMetrics();
-        setMetrics(data);
+        const [metricsData, rateLimitData] = await Promise.all([
+          getAIUsageMetrics(),
+          getRateLimitConfig(),
+        ]);
+        setMetrics(metricsData);
+        setRateLimit(rateLimitData);
       } catch (e) {
         console.error(e);
         toast.error('Erreur lors du chargement des données IA.');
@@ -34,7 +56,7 @@ export default function AdminAIUsagePage() {
         setIsLoading(false);
       }
     }
-    loadMetrics();
+    loadData();
   }, []);
 
   const handleRestrictUser = (email: string) => {
@@ -43,6 +65,35 @@ export default function AdminAIUsagePage() {
 
   const handleUpgradeUser = (email: string) => {
     toast.success(`Offre spéciale Sprint envoyée à ${email}`);
+  };
+
+  const handleSaveRateLimit = async () => {
+    setIsSavingRateLimit(true);
+    try {
+      const res = await updateRateLimitConfig({
+        capacity: Number(rateLimit.capacity),
+        durationHours: Number(rateLimit.durationHours),
+        isEnabled: rateLimit.isEnabled,
+      });
+      if (res?.success) {
+        toast.success('Configuration du Rate Limiting enregistrée avec succès.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la sauvegarde du quota.');
+    } finally {
+      setIsSavingRateLimit(false);
+    }
+  };
+
+  const handleResetRateLimit = () => {
+    setRateLimit(prev => ({
+      ...prev,
+      capacity: 80,
+      durationHours: 5,
+      isEnabled: true,
+    }));
+    toast.info('Valeurs recommandées (80 req / 5h) rétablies. Cliquez sur Enregistrer pour appliquer.');
   };
 
   if (isLoading || !metrics) {
@@ -193,6 +244,135 @@ export default function AdminAIUsagePage() {
             </div>
           </Card>
         </div>
+
+        {/* Module de Configuration du Rate Limiting IA (Anti-Abus) */}
+        <Card className="bg-white border-[#E5E1D8] p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#E5E1D8]">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded bg-[#C9A96E]/15 border border-[#C9A96E]/30 flex items-center justify-center flex-shrink-0 text-[#9E824C]">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif font-bold text-base text-[#1C1B18]">
+                    Configuration du Seuil Anti-Abus & Rate Limiting IA
+                  </h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
+                    rateLimit.isEnabled
+                      ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                      : 'text-amber-700 bg-amber-50 border-amber-200'
+                  }`}>
+                    {rateLimit.isEnabled ? 'Protection Active' : 'Protection Suspendue'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#7A776D] mt-0.5">
+                  Contrôlez dynamiquement le quota maximal de requêtes IA autorisées par utilisateur pour protéger votre budget API.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-[#fbf9f5] border border-[#E5E1D8] px-3 py-1.5 rounded">
+                <Switch
+                  id="rate-limit-switch"
+                  checked={rateLimit.isEnabled}
+                  onCheckedChange={(checked) => setRateLimit(prev => ({ ...prev, isEnabled: checked }))}
+                />
+                <Label htmlFor="rate-limit-switch" className="text-xs font-semibold text-[#1C1B18] cursor-pointer">
+                  {rateLimit.isEnabled ? 'Actif' : 'Inactif'}
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5">
+            {/* Capacité maximale */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[#1C1B18] flex items-center gap-1.5">
+                <Sliders className="h-3.5 w-3.5 text-[#C9A96E]" />
+                Capacité Maximale (Requêtes autorisées)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={rateLimit.capacity}
+                  onChange={(e) => setRateLimit(prev => ({ ...prev, capacity: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="bg-white border-[#E5E1D8] text-xs h-9 font-semibold text-[#1C1B18]"
+                />
+                <span className="text-xs text-[#7A776D] font-medium whitespace-nowrap">appels IA</span>
+              </div>
+              <p className="text-[11px] text-[#7A776D]">
+                Nombre maximal de requêtes IA dans le panier glissant (Défaut : 80).
+              </p>
+            </div>
+
+            {/* Durée de la fenêtre */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[#1C1B18] flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-[#C9A96E]" />
+                Fenêtre Glissante (en heures)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={72}
+                  value={rateLimit.durationHours}
+                  onChange={(e) => setRateLimit(prev => ({ ...prev, durationHours: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="bg-white border-[#E5E1D8] text-xs h-9 font-semibold text-[#1C1B18]"
+                />
+                <span className="text-xs text-[#7A776D] font-medium whitespace-nowrap">heures</span>
+              </div>
+              <p className="text-[11px] text-[#7A776D]">
+                Période de régénération continue du panier (Défaut : 5h).
+              </p>
+            </div>
+
+            {/* Diagnostic & Calculateur */}
+            <div className="space-y-2 p-3.5 rounded bg-[#fbf9f5] border border-[#E5E1D8] flex flex-col justify-between">
+              <div>
+                <div className="text-[11px] font-bold text-[#1C1B18] uppercase tracking-wider flex items-center gap-1.5">
+                  <Database className="h-3 w-3 text-[#C9A96E]" />
+                  Moteur de Stockage : {rateLimit.isRedisConnected ? 'Upstash Redis' : 'Mémoire Système'}
+                </div>
+                <div className="text-xs text-[#494740] mt-1 font-medium">
+                  Débit équivalent : ~<span className="font-bold text-[#1C1B18]">{(rateLimit.capacity / (rateLimit.durationHours || 1)).toFixed(1)}</span> requêtes / heure
+                </div>
+                <p className="text-[10px] text-[#7A776D] mt-0.5">
+                  {rateLimit.isRedisConnected
+                    ? 'Synchronisation temps réel via Rest API Redis.'
+                    : 'Upstash non configuré : limitation souple active.'}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E1D8]">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetRateLimit}
+                  className="bg-white hover:bg-[#efeeea] text-[#7A776D] hover:text-[#1C1B18] border-[#E5E1D8] text-[11px] h-7 px-2"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Défaut (80/5h)
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSaveRateLimit}
+                  disabled={isSavingRateLimit}
+                  className="bg-[#1C1B18] hover:bg-[#1C1B18]/90 text-white text-[11px] h-7 px-3 shadow-xs"
+                >
+                  <Save className="h-3 w-3 mr-1 text-[#C9A96E]" />
+                  {isSavingRateLimit ? 'Sauvegarde...' : 'Enregistrer'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
 
         {/* Top Free Consumers */}
         <div>

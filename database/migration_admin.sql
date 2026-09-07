@@ -97,3 +97,17 @@ create table if not exists public.ai_usage_logs (
 create index if not exists idx_ai_usage_user on public.ai_usage_logs(user_id);
 create index if not exists idx_ai_usage_operation on public.ai_usage_logs(operation);
 create index if not exists idx_audit_created on public.admin_audit_logs(created_at desc);
+
+-- 6. Table de configuration du Rate Limiting IA et paramètres système
+create table if not exists public.admin_system_config (
+    id text primary key default 'default',
+    rate_limit_capacity integer not null default 80,
+    rate_limit_duration_hours integer not null default 5,
+    rate_limit_enabled boolean not null default true,
+    updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+insert into public.admin_system_config (id, rate_limit_capacity, rate_limit_duration_hours, rate_limit_enabled)
+values ('default', 80, 5, true)
+on conflict (id) do nothing;
+

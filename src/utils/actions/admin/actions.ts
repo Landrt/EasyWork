@@ -13,7 +13,8 @@ import {
   AffiliateItem,
   AIUsageMetrics,
   ActivityMetrics,
-  SystemHealthStatus 
+  SystemHealthStatus,
+  RateLimitConfig 
 } from '@/lib/admin-types';
 import { SubscriptionPlanType } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
@@ -510,6 +511,115 @@ export async function updatePricingConfig(config: Partial<PricingConfig>) {
   return { success: true, config };
 }
 
+// Mémoire persistante en runtime local
+let inMemoryRateLimitConfig: RateLimitConfig = {
+  capacity: 80,
+  durationHours: 5,
+  isEnabled: true,
+};
+
+/**
+ * Module 5 : Configuration dynamique du Rate Limiting IA
+ */
+export async function getRateLimitConfig(): Promise<RateLimitConfig> {
+  const isRedisConnected = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+
+  try {
+    const supabase = await createServiceClient();
+    const { data } = await supabase
+      .from('admin_system_config')
+      .select('*')
+      .eq('id', 'default')
+      .maybeSingle();
+
+    if (data) {
+      const config: RateLimitConfig = {
+        capacity: Number(data.rate_limit_capacity) || 80,
+        durationHours: Number(data.rate_limit_duration_hours) || 5,
+        isEnabled: data.rate_limit_enabled !== false,
+        updatedAt: data.updated_at || undefined,
+        isRedisConnected,
+      };
+      inMemoryRateLimitConfig = config;
+      return config;
+    }
+  } catch (e) {
+    console.warn('[ADMIN] Could not fetch rate limit config from DB, using current state:', e);
+  }
+
+  return {
+    ...inMemoryRateLimitConfig,
+    isRedisConnected,
+  };
+}
+
+export async function updateRateLimitConfig(config: { capacity: number; durationHours: number; isEnabled: boolean }) {
+  const { isAdmin, email } = await checkAdminAccess();
+  if (!isAdmin) throw new Error('Accès administrateur requis');
+
+  const now = new Date().toISOString();
+  const updatedConfig: RateLimitConfig = {
+    capacity: Math.max(1, Math.floor(config.capacity)),
+    durationHours: Math.max(1, Math.floor(config.durationHours)),
+    isEnabled: Boolean(config.isEnabled),
+    updatedAt: now,
+  };
+
+  // Mettre à jour l'état runtime
+  inMemoryRateLimitConfig = updatedConfig;
+
+  // 1. Sauvegarde dans Supabase PostgreSQL
+  try {
+    const supabase = await createServiceClient();
+    await supabase.from('admin_system_config').upsert({
+      id: 'default',
+      rate_limit_capacity: updatedConfig.capacity,
+      rate_limit_duration_hours: updatedConfig.durationHours,
+      rate_limit_enabled: updatedConfig.isEnabled,
+      updated_at: now,
+    });
+  } catch (e) {
+    console.warn('[ADMIN] Could not save rate limit config to Supabase DB:', e);
+  }
+
+  // 2. Synchronisation instantanée dans Upstash Redis si configuré
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    try {
+      const { default: redis } = await import('@/lib/redis');
+      await redis.hset('system:config:rate_limit', {
+        capacity: updatedConfig.capacity.toString(),
+        duration_hours: updatedConfig.durationHours.toString(),
+        is_enabled: updatedConfig.isEnabled ? 'true' : 'false',
+        updated_at: now,
+      });
+    } catch (err) {
+      console.warn('[ADMIN] Redis sync warning:', err);
+    }
+  }
+
+  // 3. Logger dans l'audit
+  try {
+    const supabase = await createServiceClient();
+    await supabase.from('admin_audit_logs').insert({
+      admin_email: email || 'admin@easywork.com',
+      action: 'UPDATE_AI_RATE_LIMIT',
+      target_user_id: null,
+      details: {
+        capacity: updatedConfig.capacity,
+        durationHours: updatedConfig.durationHours,
+        isEnabled: updatedConfig.isEnabled,
+      },
+      severity: 'info',
+    });
+  } catch {
+    // Ignorer si table audit absente
+  }
+
+  revalidatePath('/admin/ai-usage');
+  revalidatePath('/admin/system');
+  return { success: true, config: updatedConfig };
+}
+
 /**
  * Module 3 : Surveillance réelle des Sprints expirant sous 48-72h
  */
@@ -935,5 +1045,40 @@ export async function getSystemHealthStatus(): Promise<SystemHealthStatus[]> {
     details: hasDeepSeek ? 'Clé API active' : 'Mode secours local actif',
   });
 
+  // 5. Upstash Redis (Rate Limiter Anti-Abus)
+  const hasUpstash = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  if (hasUpstash) {
+    try {
+      const t0 = Date.now();
+      const { default: redis } = await import('@/lib/redis');
+      await redis.ping();
+      const latency = Date.now() - t0;
+      results.push({
+        service: 'Upstash Redis (Rate Limiter)',
+        status: 'healthy',
+        latencyMs: latency,
+        lastChecked: 'Temps réel',
+        details: 'Connecté, quotas et anti-abus opérationnels',
+      });
+    } catch {
+      results.push({
+        service: 'Upstash Redis (Rate Limiter)',
+        status: 'degraded',
+        latencyMs: 999,
+        lastChecked: 'Temps réel',
+        details: 'Erreur de communication REST Upstash',
+      });
+    }
+  } else {
+    results.push({
+      service: 'Upstash Redis (Rate Limiter)',
+      status: 'degraded',
+      latencyMs: 0,
+      lastChecked: 'Non configuré',
+      details: 'Clés UPSTASH_REDIS_REST_* absentes (mode permissif)',
+    });
+  }
+
   return results;
 }
+

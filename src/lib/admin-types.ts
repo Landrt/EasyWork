@@ -168,3 +168,12 @@ export interface SystemHealthStatus {
   lastChecked: string;
   details: string;
 }
+
+export interface RateLimitConfig {
+  capacity: number;
+  durationHours: number;
+  isEnabled: boolean;
+  updatedAt?: string;
+  isRedisConnected?: boolean;
+}
+

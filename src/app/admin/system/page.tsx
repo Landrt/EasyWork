@@ -48,6 +48,8 @@ export default function AdminSystemPage() {
     { name: 'DEEPSEEK_API_KEY', status: 'Actif', sample: 'sk-deepseek-****' },
     { name: 'NEXT_PUBLIC_SUPABASE_URL', status: 'Actif', sample: 'https://****.supabase.co' },
     { name: 'SUPABASE_SERVICE_ROLE_KEY', status: 'Actif', sample: 'eyJhbGciOiJIUzI1Ni****' },
+    { name: 'UPSTASH_REDIS_REST_URL', status: 'Prêt (Optionnel)', sample: 'https://****.upstash.io' },
+    { name: 'UPSTASH_REDIS_REST_TOKEN', status: 'Prêt (Optionnel)', sample: 'AYgUASQg****' },
   ];
 
   return (
