@@ -186,6 +186,10 @@ export type SubscriptionPlanType = 'free' | 'sprint' | 'monthly' | 'lifetime' | 
 
 export interface Subscription {
   user_id: string;
+  paddle_subscription_id?: string | null;
+  paddle_transaction_id?: string | null;
+  paddle_customer_id?: string | null;
+  payment_provider?: string;
   flutterwave_tx_ref?: string | null;
   flutterwave_transaction_id?: string | null;
   flutterwave_customer_id?: string | null;

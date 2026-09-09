@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PricingCard, type Plan } from './pricing-card';
 import { Card } from '@/components/ui/card';
 import { Sparkles, Compass, CheckCircle2, ShieldCheck, Clock, Award } from 'lucide-react';
-import { createFlutterwavePaymentSession } from '@/utils/actions/flutterwave/actions';
+import { createPaddleCheckoutSession } from '@/utils/actions/paddle/actions';
 import { toast } from 'sonner';
 
 const plans: Plan[] = [
@@ -94,19 +94,19 @@ export function FreePlanDisplay({ initialProfile }: FreePlanDisplayProps) {
     
     try {
       setLoading(true);
-      toast.info(`Initialisation du paiement Flutterwave pour [${plan.title}]...`);
-      const session = await createFlutterwavePaymentSession({
+      toast.info(`Initialisation du paiement sécurisé Paddle pour [${plan.title}]...`);
+      const session = await createPaddleCheckoutSession({
         planType: plan.id as 'sprint' | 'monthly' | 'lifetime',
       });
 
       if (session?.checkoutUrl) {
         window.location.href = session.checkoutUrl;
       } else {
-        toast.error('Impossible de charger le paiement Flutterwave.');
+        toast.error('Impossible de charger le paiement Paddle.');
       }
     } catch (error) {
-      console.error('Flutterwave payment error:', error);
-      toast.error('Erreur lors de la création de la session Flutterwave.');
+      console.error('Paddle payment error:', error);
+      toast.error('Erreur lors de la création de la session de paiement.');
     } finally {
       setLoading(false);
     }

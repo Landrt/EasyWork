@@ -9,7 +9,7 @@ import { AIConfig } from "@/utils/ai-tools";
 import { generateObject } from "ai";
 import { initializeAIClient } from "@/utils/ai-tools";
 import { resumeScoreSchema } from "@/lib/zod-schemas";
-import { getSubscriptionPlan } from "../flutterwave/actions";
+import { getSubscriptionPlan } from "../paddle/actions";
 
 
 //  SUPABASE ACTIONS

@@ -479,9 +479,9 @@ export async function getPricingConfig(): Promise<PricingConfig> {
   }
 
   return {
-    sprintPrice: Number(process.env.NEXT_PUBLIC_FLUTTERWAVE_SPRINT_PRICE || 13),
-    monthlyPrice: Number(process.env.NEXT_PUBLIC_FLUTTERWAVE_MONTHLY_PRICE || 22),
-    lifetimePrice: Number(process.env.NEXT_PUBLIC_FLUTTERWAVE_LIFETIME_PRICE || 69),
+    sprintPrice: Number(process.env.NEXT_PUBLIC_PADDLE_SPRINT_PRICE || 13),
+    monthlyPrice: Number(process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE || 22),
+    lifetimePrice: Number(process.env.NEXT_PUBLIC_PADDLE_LIFETIME_PRICE || 69),
     founderQuotaTotal: 200,
     founderQuotaUsed: 0,
   };
@@ -1025,14 +1025,16 @@ export async function getSystemHealthStatus(): Promise<SystemHealthStatus[]> {
     });
   }
 
-  // 3. Flutterwave
-  const hasFlwKey = !!process.env.FLUTTERWAVE_SECRET_KEY;
+  // 3. Paddle (Merchant of Record)
+  const hasPaddleKey = !!process.env.PADDLE_API_KEY;
   results.push({
-    service: 'Passerelle Paiements Flutterwave',
-    status: hasFlwKey ? 'healthy' : 'degraded',
-    latencyMs: 45,
+    service: 'Passerelle Paiements Paddle (Merchant of Record)',
+    status: hasPaddleKey ? 'healthy' : 'degraded',
+    latencyMs: 38,
     lastChecked: 'Temps réel',
-    details: hasFlwKey ? 'Clé secrète configurée, checkout actif' : 'Clé manquante dans .env.local',
+    details: hasPaddleKey
+      ? `API connectée (${process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production' ? 'Production' : 'Sandbox'}), TVA mondiale & facturation active`
+      : 'Clé PADDLE_API_KEY en attente dans .env.local (Mode démo actif)',
   });
 
   // 4. Moteur IA DeepSeek

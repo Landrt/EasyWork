@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { PricingCard, type Plan } from '../pricing/pricing-card';
 import { useRouter } from 'next/navigation';
-import { getSubscriptionStatus, createFlutterwavePaymentSession } from '@/utils/actions/flutterwave/actions';
+import { getSubscriptionStatus, createPaddleCheckoutSession } from '@/utils/actions/paddle/actions';
 import { hasActiveProAccess } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -88,8 +88,8 @@ interface Profile {
   subscription_status: string | null;
   current_period_end: string | null;
   trial_end: string | null;
-  flutterwave_transaction_id?: string | null;
-  flutterwave_tx_ref?: string | null;
+  paddle_subscription_id?: string | null;
+  paddle_transaction_id?: string | null;
 }
 
 export function SubscriptionSection() {
@@ -130,19 +130,19 @@ export function SubscriptionSection() {
 
     try {
       setIsCheckingOut(true);
-      toast.info(`Initialisation du paiement Flutterwave [${plan.title}]...`);
-      const session = await createFlutterwavePaymentSession({
+      toast.info(`Initialisation du paiement sécurisé Paddle [${plan.title}]...`);
+      const session = await createPaddleCheckoutSession({
         planType: plan.id as 'sprint' | 'monthly' | 'lifetime',
       });
 
       if (session?.checkoutUrl) {
         window.location.href = session.checkoutUrl;
       } else {
-        toast.error('Impossible de charger le paiement Flutterwave.');
+        toast.error('Impossible d\'initialiser le paiement Paddle.');
       }
     } catch (error) {
-      console.error('Flutterwave payment error:', error);
-      toast.error('Erreur lors de la redirection vers Flutterwave.');
+      console.error('Paddle payment error:', error);
+      toast.error('Erreur lors de la préparation du paiement.');
     } finally {
       setIsCheckingOut(false);
     }

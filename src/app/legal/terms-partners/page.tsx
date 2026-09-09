@@ -105,7 +105,7 @@ export default function TermsPartnersPage() {
             Les retraits de commissions disponibles sont débloqués dès que le solde atteint le seuil minimal de <strong>20,00 USD</strong>.
           </p>
           <p>
-            Les versements sont opérés via l&apos;infrastructure de paiement Flutterwave par virement direct sur Mobile Money (Orange Money, MTN MoMo, Wave, etc.) ou par virement bancaire sur le compte préalablement renseigné et vérifié par le Partenaire.
+            Les versements sont opérés par virement direct sur Mobile Money (Orange Money, MTN MoMo, Wave, etc.), virement bancaire ou PayPal sur le compte préalablement renseigné et vérifié par le Partenaire.
           </p>
         </section>
 

@@ -94,7 +94,7 @@ export default function AdminSubscriptionsPage() {
     <div className="min-h-screen bg-[#fbf9f5]">
       <AdminHeader 
         title="Abonnements & Formules" 
-        subtitle="Supervision de la grille 4 paliers Flutterwave, quotas et détection d'expiration Sprint."
+        subtitle="Supervision de la grille 4 paliers Paddle (Merchant of Record), quotas et détection d'expiration Sprint."
       />
 
       <div className="p-8 space-y-8 max-w-7xl">
@@ -218,10 +218,10 @@ export default function AdminSubscriptionsPage() {
               <div>
                 <h3 className="font-serif font-bold text-base text-[#1C1B18] flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-[#C9A96E]" />
-                  Ajuster la Grille Tarifaire Flutterwave
+                  Ajuster la Grille Tarifaire Paddle
                 </h3>
                 <p className="text-xs text-[#7A776D] mt-0.5">
-                  Synchronisé avec les montants affichés sur le checkout Flutterwave.
+                  Synchronisé avec les montants affichés sur le checkout Paddle.
                 </p>
               </div>
             </div>

@@ -2,7 +2,7 @@ import { LanguageModelV1, ToolInvocation, smoothStream, streamText } from 'ai';
 import { Resume, Job } from '@/lib/types';
 import { initializeAIClient, type AIConfig } from '@/utils/ai-tools';
 import { tools } from '@/lib/tools';
-import { getSubscriptionPlan } from '@/utils/actions/flutterwave/actions';
+import { getSubscriptionPlan } from '@/utils/actions/paddle/actions';
 import { checkRateLimit } from '@/lib/rateLimiter';
 
 interface Message {

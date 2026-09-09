@@ -6,7 +6,7 @@ import { textImportSchema, workExperienceBulletPointsSchema } from "@/lib/zod-sc
 import { generateObject } from "ai";
 import { z } from "zod";
 import { initializeAIClient, type AIConfig } from '@/utils/ai-tools';
-import { getSubscriptionPlan } from "@/utils/actions/flutterwave/actions";
+import { getSubscriptionPlan } from "@/utils/actions/paddle/actions";
 import { PROJECT_GENERATOR_MESSAGE, PROJECT_IMPROVER_MESSAGE, TEXT_ANALYZER_SYSTEM_MESSAGE, WORK_EXPERIENCE_GENERATOR_MESSAGE, WORK_EXPERIENCE_IMPROVER_MESSAGE } from "@/lib/prompts";
 import { projectAnalysisSchema, workExperienceItemsSchema } from "@/lib/zod-schemas";
 import { WorkExperience } from "@/lib/types";

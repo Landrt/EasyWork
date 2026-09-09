@@ -42,9 +42,10 @@ export default function AdminSystemPage() {
   }, []);
 
   const envConfigs = [
-    { name: 'NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY', status: 'Actif', sample: 'FLWPUBK_TEST-****' },
-    { name: 'FLUTTERWAVE_SECRET_KEY', status: 'Actif', sample: 'FLWSECK_TEST-****' },
-    { name: 'FLUTTERWAVE_SECRET_HASH', status: 'Actif', sample: 'easywork_flw_****' },
+    { name: 'NEXT_PUBLIC_PADDLE_CLIENT_TOKEN', status: 'Prêt', sample: 'live_**** / test_****' },
+    { name: 'PADDLE_API_KEY', status: 'Prêt', sample: 'pdl_live_****' },
+    { name: 'PADDLE_WEBHOOK_SECRET_KEY', status: 'Prêt', sample: 'pdl_ntfset_****' },
+    { name: 'NEXT_PUBLIC_PADDLE_ENVIRONMENT', status: 'Actif', sample: 'sandbox' },
     { name: 'DEEPSEEK_API_KEY', status: 'Actif', sample: 'sk-deepseek-****' },
     { name: 'NEXT_PUBLIC_SUPABASE_URL', status: 'Actif', sample: 'https://****.supabase.co' },
     { name: 'SUPABASE_SERVICE_ROLE_KEY', status: 'Actif', sample: 'eyJhbGciOiJIUzI1Ni****' },
@@ -56,7 +57,7 @@ export default function AdminSystemPage() {
     <div className="min-h-screen bg-[#fbf9f5]">
       <AdminHeader 
         title="Système & Santé de l'Infrastructure" 
-        subtitle="Monitoring en direct des services, connectivité Supabase, Flutterwave et DeepSeek."
+        subtitle="Monitoring en direct des services, connectivité Supabase, Paddle (Merchant of Record) et DeepSeek."
       />
 
       <div className="p-8 space-y-8 max-w-7xl">
@@ -188,7 +189,7 @@ export default function AdminSystemPage() {
                 <span>Tous les canaux de communication sont sécurisés.</span>
               </div>
               <p className="text-[#7A776D] text-[11px] leading-relaxed">
-                Les signatures de webhooks Flutterwave (`verif-hash`) sont validées à chaque requête. Les sessions utilisateurs sont protégées par chiffrement JWT Supabase avec Row Level Security.
+                Les signatures des webhooks Paddle (`paddle-signature` HMAC-SHA256) sont validées à chaque requête. Les sessions utilisateurs sont protégées par chiffrement JWT Supabase avec Row Level Security.
               </p>
             </div>
           </Card>

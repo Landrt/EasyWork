@@ -16,7 +16,7 @@ const SuccessPage = () => {
           Paiement validé avec succès
         </h1>
         <p className="text-sm text-[#494740] font-sans">
-          Votre abonnement a été activé via Flutterwave. Vous bénéficiez désormais de l&apos;ensemble des fonctionnalités avancées d&apos;EasyWork Pro.
+          Votre abonnement a été activé via Paddle (Merchant of Record). Vous bénéficiez désormais de l&apos;ensemble des fonctionnalités avancées d&apos;EasyWork Pro.
         </p>
       </div>
       

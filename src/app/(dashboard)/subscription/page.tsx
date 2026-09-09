@@ -1,7 +1,7 @@
 import { ProPlanDisplay } from '@/components/pricing/pro-plan-display';
 import { FreePlanDisplay } from '@/components/pricing/free-plan-display';
 import { CancelingPlanDisplay } from '@/components/pricing/canceling-plan-display';
-import { getSubscriptionStatus } from '@/utils/actions/flutterwave/actions';
+import { getSubscriptionStatus } from '@/utils/actions/paddle/actions';
 import { hasActiveProAccess } from '@/lib/types';
 
 interface Profile {
@@ -9,8 +9,8 @@ interface Profile {
   subscription_status: string | null;
   current_period_end: string | null;
   trial_end: string | null;
-  flutterwave_transaction_id?: string | null;
-  flutterwave_tx_ref?: string | null;
+  paddle_subscription_id?: string | null;
+  paddle_transaction_id?: string | null;
 }
 
 export default async function PlansPage() {

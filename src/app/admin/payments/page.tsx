@@ -68,7 +68,7 @@ export default function AdminPaymentsPage() {
       toast.info('Aucune donnée à exporter.');
       return;
     }
-    const headers = ['ID Transaction,Ref Flutterwave,Utilisateur,Email,Plan,Montant,Devise,Statut,Moyen de Paiement,Date'];
+    const headers = ['ID Transaction,Ref Transaction,Utilisateur,Email,Plan,Montant,Devise,Statut,Moyen de Paiement,Date'];
     const rows = filteredPayments.map(p => 
       `"${p.id}","${p.txRef}","${p.userName}","${p.userEmail}","${p.plan}",${p.amount},"${p.currency}","${p.status}","${p.paymentMethod}","${p.createdAt}"`
     );
@@ -76,7 +76,7 @@ export default function AdminPaymentsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `easywork_flutterwave_transactions_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `easywork_paddle_transactions_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -91,7 +91,7 @@ export default function AdminPaymentsPage() {
     <div className="min-h-screen bg-[#fbf9f5]">
       <AdminHeader 
         title="Paiements & Facturation" 
-        subtitle="Historique des encaissements réels Flutterwave et export comptable CSV."
+        subtitle="Historique des encaissements réels Paddle (Merchant of Record) et export comptable CSV."
       />
 
       <div className="p-8 space-y-6 max-w-7xl">
@@ -104,7 +104,7 @@ export default function AdminPaymentsPage() {
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-2xl font-bold font-serif text-[#1C1B18]">{totalSuccessful.toLocaleString('fr-FR')} €</span>
-              <span className="text-xs text-emerald-600 font-medium">100% Flutterwave</span>
+              <span className="text-xs text-emerald-600 font-medium">Paddle MoR</span>
             </div>
             <p className="text-[11px] text-[#7A776D] mt-1">Total des transactions réussies en base</p>
           </Card>
@@ -141,7 +141,7 @@ export default function AdminPaymentsPage() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#7A776D]" />
                 <Input
-                  placeholder="Rechercher par client, email, réf Flutterwave..."
+                  placeholder="Rechercher par client, email, réf transaction..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-[#fbf9f5] border-[#E5E1D8] text-[#1C1B18] pl-9 text-xs h-9 focus:border-[#C9A96E]"

@@ -3,7 +3,7 @@
 "use server"
 
 import { SettingsContent } from '@/components/settings/settings-content'
-import { checkSubscriptionPlan } from '@/utils/actions/flutterwave/actions';
+import { checkSubscriptionPlan } from '@/utils/actions/paddle/actions';
 import { createClient } from '@/utils/supabase/server'
 
 

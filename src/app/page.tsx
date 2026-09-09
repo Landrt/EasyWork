@@ -25,7 +25,7 @@ import type { Resume } from "@/lib/types";
 import { ResumesSection } from "@/components/dashboard/resumes-section";
 import { createClient } from "@/utils/supabase/server";
 import { getDashboardData } from "@/utils/actions";
-import { checkSubscriptionPlan } from "@/utils/actions/flutterwave/actions";
+import { checkSubscriptionPlan } from "@/utils/actions/paddle/actions";
 
 
 

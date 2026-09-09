@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { toast } from "sonner"
 import { ServiceName } from "@/lib/types"
 import Image from 'next/image'
-import { getSubscriptionPlan } from "@/utils/actions/flutterwave/actions"
+import { getSubscriptionPlan } from "@/utils/actions/paddle/actions"
 
 
 const MODEL_STORAGE_KEY = 'easywork-default-model'

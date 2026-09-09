@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Trophy, CheckCircle2, ShieldCheck, AlertTriangle, Clock, Award } from 'lucide-react';
 import { PricingCard, type Plan } from './pricing-card';
-import { cancelSubscription, createFlutterwavePaymentSession } from '@/utils/actions/flutterwave/actions';
+import { cancelSubscription, createPaddleCheckoutSession } from '@/utils/actions/paddle/actions';
 import { toast } from 'sonner';
 
 const plans: Plan[] = [
@@ -85,7 +85,8 @@ interface ProPlanDisplayProps {
     subscription_status: string | null;
     current_period_end: string | null;
     trial_end: string | null;
-    flutterwave_transaction_id?: string | null;
+    paddle_subscription_id?: string | null;
+    paddle_transaction_id?: string | null;
     flutterwave_tx_ref?: string | null;
   } | null;
 }
@@ -131,16 +132,16 @@ export function ProPlanDisplay({ initialProfile }: ProPlanDisplayProps) {
     if (!plan.priceId || plan.id === 'free') return;
     try {
       setIsLoading(true);
-      toast.info(`Initialisation de l'accès [${plan.title}]...`);
-      const session = await createFlutterwavePaymentSession({
+      toast.info(`Initialisation du paiement sécurisé Paddle pour [${plan.title}]...`);
+      const session = await createPaddleCheckoutSession({
         planType: plan.id as 'sprint' | 'monthly' | 'lifetime',
       });
       if (session?.checkoutUrl) {
         window.location.href = session.checkoutUrl;
       }
     } catch (error) {
-      console.error(error);
-      toast.error('Erreur lors de la redirection Flutterwave.');
+      console.error('Paddle payment error:', error);
+      toast.error('Erreur lors de la préparation du paiement.');
     } finally {
       setIsLoading(false);
     }
@@ -180,7 +181,7 @@ export function ProPlanDisplay({ initialProfile }: ProPlanDisplayProps) {
             <p className="text-xs text-[#716e65]">
               {isSprint ? 'Fin automatique du Sprint le : ' : 'Prochain renouvellement prévu le : '}
               <span className="font-semibold text-[#1C1B18]">{periodEndFormatted}</span>
-              {initialProfile?.flutterwave_tx_ref && ` (Réf: ${initialProfile.flutterwave_tx_ref})`}
+              {(initialProfile?.paddle_transaction_id || initialProfile?.flutterwave_tx_ref) && ` (Réf: ${initialProfile.paddle_transaction_id || initialProfile.flutterwave_tx_ref})`}
             </p>
           )}
 

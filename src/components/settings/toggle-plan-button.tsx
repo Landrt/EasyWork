@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSubscriptionPlan, toggleSubscriptionPlan } from '@/utils/actions/flutterwave/actions';
+import { getSubscriptionPlan, toggleSubscriptionPlan } from '@/utils/actions/paddle/actions';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock, Sparkles, Trophy } from 'lucide-react';
 import { PricingCard, type Plan } from './pricing-card';
-import { createFlutterwavePaymentSession } from '@/utils/actions/flutterwave/actions';
+import { createPaddleCheckoutSession } from '@/utils/actions/paddle/actions';
 import { toast } from 'sonner';
 
 const plans: Plan[] = [
@@ -71,7 +71,7 @@ const plans: Plan[] = [
       'Accès permanent à vie à toutes les fonctionnalités',
       'Toutes les futures fonctionnalités incluses',
       'CVs, lettres & exports illimités à vie',
-      'Quota limité (200 places réelles)',
+      'Quota limité (200 places réelles garanties)',
       'Support prioritaire EasyWork',
       'Aucun renouvellement ni frais cachés',
     ]
@@ -84,8 +84,8 @@ interface CancelingPlanDisplayProps {
     subscription_status: string | null;
     current_period_end: string | null;
     trial_end: string | null;
-    flutterwave_transaction_id?: string | null;
-    flutterwave_tx_ref?: string | null;
+    paddle_subscription_id?: string | null;
+    paddle_transaction_id?: string | null;
   } | null;
 }
 
@@ -101,18 +101,18 @@ export function CancelingPlanDisplay({ initialProfile }: CancelingPlanDisplayPro
 
     try {
       setIsLoading(true);
-      toast.info(`Initialisation du paiement Flutterwave [${plan.title}]...`);
-      const session = await createFlutterwavePaymentSession({
+      toast.info(`Initialisation du paiement sécurisé Paddle [${plan.title}]...`);
+      const session = await createPaddleCheckoutSession({
         planType: plan.id as 'sprint' | 'monthly' | 'lifetime',
       });
 
       if (session?.checkoutUrl) {
         window.location.href = session.checkoutUrl;
       } else {
-        toast.error('Impossible d\'initialiser le paiement Flutterwave.');
+        toast.error('Impossible d\'initialiser le paiement Paddle.');
       }
     } catch (error) {
-      console.error('Flutterwave reactivation error:', error);
+      console.error('Paddle reactivation error:', error);
       toast.error('Erreur lors de la réactivation.');
     } finally {
       setIsLoading(false);

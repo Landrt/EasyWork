@@ -6,10 +6,14 @@
 alter table public.profiles add column if not exists is_admin boolean default false;
 alter table public.profiles add column if not exists is_suspended boolean default false;
 
--- 2. Table des abonnements Flutterwave
+-- 2. Table des abonnements (Paddle & Passerelles)
 create table if not exists public.subscriptions (
     id uuid primary key default extensions.uuid_generate_v4(),
     user_id uuid unique not null references auth.users(id) on delete cascade,
+    paddle_subscription_id text null,
+    paddle_customer_id text null,
+    paddle_transaction_id text null,
+    payment_provider text not null default 'paddle', -- 'paddle', 'flutterwave'
     flutterwave_transaction_id text null,
     flutterwave_tx_ref text null,
     flutterwave_customer_id text null,
@@ -20,11 +24,18 @@ create table if not exists public.subscriptions (
     updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 2.b Table des paiements et transactions Flutterwave
+alter table public.subscriptions add column if not exists paddle_subscription_id text null;
+alter table public.subscriptions add column if not exists paddle_customer_id text null;
+alter table public.subscriptions add column if not exists paddle_transaction_id text null;
+alter table public.subscriptions add column if not exists payment_provider text default 'paddle';
+
+-- 2.b Table des paiements et transactions (Paddle & Passerelles)
 create table if not exists public.payments (
     id uuid primary key default extensions.uuid_generate_v4(),
     user_id uuid not null references auth.users(id) on delete cascade,
     tx_ref text unique not null,
+    paddle_transaction_id text null,
+    payment_provider text not null default 'paddle',
     flw_id text null,
     plan text not null default 'sprint',
     amount numeric not null,
@@ -33,6 +44,9 @@ create table if not exists public.payments (
     payment_method text null default 'Carte Bancaire',
     created_at timestamp with time zone default timezone('utc'::text, now())
 );
+
+alter table public.payments add column if not exists paddle_transaction_id text null;
+alter table public.payments add column if not exists payment_provider text default 'paddle';
 
 -- 3. Table de configuration dynamique des tarifs et quotas
 create table if not exists public.admin_pricing_config (
