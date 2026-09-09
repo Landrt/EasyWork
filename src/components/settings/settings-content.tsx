@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 
 const sections = [
-  { id: "security", title: "Security", description: "Manage your email and password settings", icon: "🔒" },
-  { id: "subscription", title: "Subscription", description: "Manage your subscription and billing settings", icon: "💳" },
-  { id: "api-keys", title: "API Keys", description: "Manage your API keys for different AI providers", icon: "🔑" },
-  { id: "danger-zone", title: "Danger Zone", description: "Irreversible and destructive actions", icon: "⚠️" },
+  { id: "security", title: "Sécurité", description: "Gérez vos identifiants et mot de passe", icon: "🔒" },
+  { id: "subscription", title: "Abonnement", description: "Gérez votre forfait et vos accès", icon: "💳" },
+  { id: "api-keys", title: "Clés API", description: "Configurez vos clés d'accès aux modèles d'IA", icon: "🔑" },
+  { id: "danger-zone", title: "Zone de Danger", description: "Actions irréversibles et suppression de compte", icon: "⚠️" },
 ]
 
 interface SettingsContentProps {
@@ -66,7 +66,7 @@ export function SettingsContent({ user, isProPlan, subscriptionStatus }: Setting
       {/* Table of Contents */}
       <div className="w-64 hidden lg:block">
         <div className="sticky top-20 rounded-lg border border-white/40 bg-white/80 backdrop-blur-xl p-4">
-          <h3 className="font-semibold mb-4 text-muted-foreground">On this page</h3>
+          <h3 className="font-semibold mb-4 text-muted-foreground text-xs uppercase tracking-wider">Sur cette page</h3>
           <div className="space-y-1">
             {sections.map((section) => (
               <Button
@@ -96,8 +96,8 @@ export function SettingsContent({ user, isProPlan, subscriptionStatus }: Setting
         {/* Security Settings */}
         <Card id="security" className="border-white/40 shadow-xl shadow-black/5 bg-white/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-xl">Security</CardTitle>
-            <CardDescription>Manage your email and password settings</CardDescription>
+            <CardTitle className="text-xl">Sécurité</CardTitle>
+            <CardDescription>Gérez votre adresse e-mail et votre mot de passe</CardDescription>
           </CardHeader>
           <CardContent>
             <SecurityForm user={user} />
@@ -107,8 +107,8 @@ export function SettingsContent({ user, isProPlan, subscriptionStatus }: Setting
         {/* Subscription Management */}
         <Card id="subscription" className="border-white/40 shadow-xl shadow-black/5 bg-white/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-xl">Subscription</CardTitle>
-            <CardDescription>Manage your subscription and billing settings</CardDescription>
+            <CardTitle className="text-xl">Abonnement & Facturation</CardTitle>
+            <CardDescription>Gérez votre formule, votre période active et votre statut</CardDescription>
           </CardHeader>
           <CardContent>
             <SubscriptionSection />
@@ -118,8 +118,8 @@ export function SettingsContent({ user, isProPlan, subscriptionStatus }: Setting
         {/* API Keys */}
         <Card id="api-keys" className="border-white/40 shadow-xl shadow-black/5 bg-white/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-xl">API Keys</CardTitle>
-            <CardDescription>Manage your API keys for different AI providers</CardDescription>
+            <CardTitle className="text-xl">Clés d&apos;accès API (Optionnel)</CardTitle>
+            <CardDescription>Configurez vos propres clés d&apos;accès aux fournisseurs d&apos;IA</CardDescription>
           </CardHeader>
           <CardContent>
             <ApiKeysForm isProPlan={isProPlan} />
@@ -129,8 +129,8 @@ export function SettingsContent({ user, isProPlan, subscriptionStatus }: Setting
         {/* Danger Zone */}
         <Card id="danger-zone" className="border-destructive/50 shadow-xl shadow-black/5 bg-white/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-xl text-destructive">Danger Zone</CardTitle>
-            <CardDescription>Irreversible and destructive actions</CardDescription>
+            <CardTitle className="text-xl text-destructive">Zone de Danger</CardTitle>
+            <CardDescription>Actions irréversibles et clôture de compte</CardDescription>
           </CardHeader>
           <CardContent>
             <DangerZone subscriptionStatus={subscriptionStatus} />

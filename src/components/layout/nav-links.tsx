@@ -23,10 +23,10 @@ function NavLink({ href, children, className }: NavLinkProps) {
 export function NavLinks() {
   return (
     <div className="hidden md:flex items-center gap-6">
-      <NavLink href="#features">Features</NavLink>
-      <NavLink href="#how-it-works">How it Works</NavLink>
-      <NavLink href="#pricing">Pricing</NavLink>
-      <NavLink href="#about">About</NavLink>
+      <NavLink href="#features">Fonctionnalités</NavLink>
+      <NavLink href="#how-it-works">Comment ça marche</NavLink>
+      <NavLink href="#pricing">Tarifs</NavLink>
+      <NavLink href="#about">À propos</NavLink>
     </div>
   );
 } 

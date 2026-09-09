@@ -3,9 +3,10 @@
 import { CheckCircle2 } from "lucide-react";
 
 const BENEFITS = [
-  "Free and Open Source",
-  "Comp Sci / Engineering Focused",
-  "Customizable Models and System Prompts"
+  "Optimisé pour tous les systèmes ATS du marché",
+  "Adaptation sur-mesure à chaque offre d'emploi",
+  "Audit de score ATS détaillé & mots-clés manquants",
+  "Modèles d'IA avancés et exports PDF/DOCX certifiés"
 ] as const;
 
 export function BenefitsList() {

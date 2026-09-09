@@ -206,31 +206,31 @@ export default async function LoginPage({
           <div className="flex flex-col gap-20 py-16" id="features">
             <SplitContent
               imageSrc="/SS Chat.png"
-              heading="AI-Powered Resume Assistant"
-              description="Get real-time feedback and suggestions from our advanced AI assistant. Optimize your resume content, improve your bullet points, and ensure your skills stand out to recruiters and ATS systems."
+              heading="Assistant CV Propulsé par l'IA"
+              description="Recevez des suggestions en temps réel pour perfectionner vos descriptions, quantifier vos réalisations et maximiser votre impact auprès des recruteurs et des logiciels ATS."
               imageOnLeft={false}
               imageOverflowRight={true}
             />
 
             <SplitContent
               imageSrc="/Dashboard Image.png"
-              heading="Beautiful Resume Dashboard"
-              description="Manage all your resumes in one place with our intuitive dashboard. Create base resumes, generate tailored versions for specific jobs, and track your application progress with ease."
+              heading="Cockpit Complet de vos Candidatures"
+              description="Centralisez vos CVs et suivez précisément vos démarches d'embauche dans un espace clair et intuitif. Générez des versions ciblées et gardez le contrôle total de vos candidatures."
               imageOnLeft={false}
             />
 
             <SplitContent
               imageSrc="/SS Score.png"
-              heading="Resume Performance Scoring"
-              description="Get detailed insights into your resume's effectiveness with our comprehensive scoring system. Track key metrics, identify areas for improvement, and optimize your resume to stand out to employers and ATS systems."
+              heading="Audit de Score & Performance ATS"
+              description="Mesurez l'adéquation de votre CV avec les attentes de l'entreprise cible. Détectez instantanément les mots-clés manquants et optimisez votre taux de conversion en entretiens."
               imageOnLeft={false}
               imageOverflowRight={true}
             />
 
             <SplitContent
               imageSrc="/SS Cover Letter.png"
-              heading="AI Cover Letter Generator"
-              description="Create compelling, personalized cover letters in minutes with our AI-powered generator. Tailor your message to specific job opportunities while maintaining a professional and engaging tone that captures attention."
+              heading="Générateur de Lettres de Motivation Ciblées"
+              description="Créez des lettres percutantes et authentiques adaptées à chaque annonce en quelques clics, tout en préservant un style professionnel et convaincant."
               imageOnLeft={false}
             />
           </div>

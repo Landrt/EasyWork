@@ -12,9 +12,9 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
 
-    // Check if user is on Pro plan
+    // Check if user is on active paid plan (Sprint, Monthly, Lifetime)
     const subscription = await checkSubscriptionPlan();
-    const isProPlan = subscription.plan === 'pro';
+    const isProPlan = subscription.isActive && subscription.plan !== 'free';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">

@@ -7,7 +7,7 @@ export function ModelShowcase() {
         {/* Heading with gradient text */}
         <h2 className="text-center text-3xl font-semibold mb-12">
           <span className="bg-gradient-to-r from-violet-600 via-blue-600 to-violet-600 bg-clip-text text-transparent">
-            Use Your Favorite AI Models
+            Propulsé par les Meilleurs Modèles d&apos;Intelligence Artificielle
           </span>
         </h2>
 

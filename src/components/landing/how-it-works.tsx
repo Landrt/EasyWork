@@ -61,8 +61,8 @@ export function HowItWorks() {
             <div className="flex flex-col items-center">
               <FlowCard
                 type="profile"
-                title="Your Profile"
-                description="Store all your professional experience, skills, and achievements in one place"
+                title="Votre Profil Master"
+                description="Centralisez vos expériences, compétences et réalisations professionnelles"
                 className="w-64"
               />
             </div>
@@ -81,14 +81,14 @@ export function HowItWorks() {
             <div className="flex flex-col items-center gap-4">
               <FlowCard
                 type="base"
-                title="Software Engineer"
-                description="Curate relevant experience for software roles"
+                title="Développeur Logiciel"
+                description="Structurez vos compétences techniques et projets clés"
                 className="w-48"
               />
               <FlowCard
                 type="base"
-                title="Product Manager"
-                description="Highlight leadership and product skills"
+                title="Chef de Projet Digital"
+                description="Valorisez votre leadership et votre pilotage agile"
                 className="w-48"
               />
             </div>
@@ -111,26 +111,26 @@ export function HowItWorks() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-24">
               <FlowCard
                 type="tailored"
-                title="Frontend Dev at Google"
-                description="Tailored for Google's frontend position"
+                title="Frontend Dev chez Doctolib"
+                description="CV adapté aux critères techniques et ATS"
                 className="w-48"
               />
               <FlowCard
                 type="tailored"
-                title="Full Stack at Meta"
-                description="Customized for Meta's requirements"
+                title="Fullstack chez Qonto"
+                description="Personnalisé pour l'environnement fintech"
                 className="w-48"
               />
               <FlowCard
                 type="tailored"
-                title="PM at Amazon"
-                description="Aligned with Amazon's leadership principles"
+                title="Lead Tech chez Alan"
+                description="Aligné sur la culture et les enjeux santé"
                 className="w-48"
               />
               <FlowCard
                 type="tailored"
-                title="PM at Microsoft"
-                description="Focused on Microsoft's PM expectations"
+                title="PM chez PayFit"
+                description="Centré sur l'expérience RH et produit SaaS"
                 className="w-48"
               />
             </div>

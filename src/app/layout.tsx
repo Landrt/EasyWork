@@ -7,7 +7,7 @@ import { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://easywork.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://easywork.com"),
   title: {
     default: "EasyWork - Tailored ATS Resumes & AI Job Applications",
     template: "%s | EasyWork"
@@ -67,7 +67,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let user: { id: string; email?: string } | null = { id: "demo-user-1", email: "alexandre.martin@example.com" };
+  let user: { id: string; email?: string } | null = null;
   try {
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
@@ -86,7 +86,7 @@ export default async function RootLayout({
         <div className="relative min-h-screen h-screen flex flex-col">
           {user && <AppHeader showUpgradeButton={showUpgradeButton} />}
           {/* Padding for header and footer */}
-          <main className="py-14 h-full">
+          <main className={user ? "py-14 h-full" : "h-full"}>
             {children}
             <Analytics />
           </main>
