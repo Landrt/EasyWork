@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useAuth } from "./auth-context";
 
 function SubmitButton() {
@@ -22,10 +23,10 @@ function SubmitButton() {
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Creating Account...
+          Création en cours...
         </>
       ) : (
-        "Create Account"
+        "Créer mon compte"
       )}
     </Button>
   );
@@ -211,6 +212,17 @@ export function SignupForm() {
           </div>
 
           <SubmitButton />
+
+          <p className="text-[11px] text-center text-muted-foreground pt-1 leading-tight">
+            En créant un compte, vous acceptez nos{' '}
+            <Link href="/legal/terms" target="_blank" className="text-violet-600 underline hover:text-violet-700">
+              Conditions d&apos;Utilisation
+            </Link>{' '}
+            et notre{' '}
+            <Link href="/legal/privacy" target="_blank" className="text-violet-600 underline hover:text-violet-700">
+              Politique de Confidentialité
+            </Link>.
+          </p>
         </form>
       )}
     </>

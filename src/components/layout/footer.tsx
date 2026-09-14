@@ -17,25 +17,37 @@ export function Footer({ variant = 'fixed' }: FooterProps) {
             Optimisation ATS & Candidatures intelligentes
           </span>
         </div>
-        <nav className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+        <nav className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-5">
+          <Link
+            href="/legal/terms"
+            className="text-xs text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
+          >
+            CGU / CGV
+          </Link>
+          <Link
+            href="/legal/privacy"
+            className="text-xs text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
+          >
+            Confidentialité
+          </Link>
           <Link
             href="/partner"
-            className="text-sm text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
+            className="text-xs text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
           >
             Programme Partenaire
           </Link>
           <Link
             href="/legal/terms-partners"
-            className="text-sm text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
+            className="text-xs text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
           >
             Conditions Partenaires
           </Link>
           <Link
             href="mailto:contact@easywork.com"
-            className="flex items-center gap-1.5 text-sm text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
+            className="flex items-center gap-1 text-xs text-[#494740] hover:text-[#1C1B18] transition-colors underline-offset-4 hover:underline"
           >
-            <Mail className="h-4 w-4" />
-            <span>Contact Support</span>
+            <Mail className="h-3.5 w-3.5" />
+            <span>Support</span>
           </Link>
         </nav>
       </div>
