@@ -125,9 +125,11 @@ export function ModelSelector() {
     }
   }, [])
 
+  const isProAccess = subscriptionPlan === 'pro' || subscriptionPlan === 'lifetime' || subscriptionPlan === 'sprint' || subscriptionPlan === 'monthly';
+
   // Watch for API key changes
   useEffect(() => {
-    if (subscriptionPlan === 'pro') return // Skip key checks for Pro users
+    if (isProAccess) return // Skip key checks for Pro users
     
     const currentModel = AI_MODELS.find(m => m.id === defaultModel)
     if (currentModel && !apiKeys.some(k => k.service === currentModel.provider)) {
@@ -145,7 +147,7 @@ export function ModelSelector() {
         toast.info('No AI models available. Please add an API key in settings.')
       }
     }
-  }, [apiKeys, defaultModel, subscriptionPlan])
+  }, [apiKeys, defaultModel, isProAccess])
 
   // Add useEffect to fetch subscription status
   useEffect(() => {
@@ -161,7 +163,7 @@ export function ModelSelector() {
     if (!selectedModel) return
 
     // Skip API key check for Pro users
-    if (subscriptionPlan !== 'pro') {
+    if (!isProAccess) {
       const hasRequiredKey = apiKeys.some(k => k.service === selectedModel.provider)
       if (!hasRequiredKey) {
         toast.error(`Please add your ${selectedModel.provider === 'openai' ? 'OpenAI' : 'Anthropic'} API key first`)
@@ -175,7 +177,7 @@ export function ModelSelector() {
   }
 
   const isModelSelectable = (modelId: string) => {
-    if (subscriptionPlan === 'pro') return true // Bypass API check for Pro users
+    if (isProAccess) return true // Bypass API check for Pro users
     const model = AI_MODELS.find(m => m.id === modelId)
     return model ? apiKeys.some(k => k.service === model.provider) : false
   }

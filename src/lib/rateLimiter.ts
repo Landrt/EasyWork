@@ -1,6 +1,6 @@
-// utils/rateLimiter.ts
 import redis from '@/lib/redis';
 import { getRateLimitConfig } from '@/utils/actions/admin/actions';
+import { isDevBypassActive } from '@/utils/dev-bypass';
 
 let cachedLimitConfig: { capacity: number; durationSeconds: number; durationHours: number; isEnabled: boolean } | null = null;
 let lastCacheSync = 0;
@@ -45,6 +45,11 @@ export async function checkRateLimit(
   explicitCapacity?: number,
   explicitDuration?: number
 ): Promise<void> {
+  // Mode Bypass Développeur : aucune restriction de quota ni de délai
+  if (await isDevBypassActive()) {
+    return;
+  }
+
   // Si Upstash Redis n'est pas configuré, autoriser la requête (mode permissif)
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
     return;

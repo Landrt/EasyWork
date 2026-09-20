@@ -13,6 +13,7 @@ import { ProUpgradeButton } from "@/components/settings/pro-upgrade-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { DevBypassToggle } from "@/components/dev/dev-bypass-toggle";
 
 interface AppHeaderProps {
   children?: React.ReactNode;
@@ -53,6 +54,7 @@ export function AppHeader({ children, showUpgradeButton = true }: AppHeaderProps
                 )}
                 
                 <div className="flex items-center px-2 py-1">
+                  <DevBypassToggle className="mr-2" />
                   <Link 
                     href="/admin" 
                     className={cn(
@@ -109,6 +111,9 @@ export function AppHeader({ children, showUpgradeButton = true }: AppHeaderProps
                     <SheetTitle className="font-serif text-[#1C1B18]">Menu</SheetTitle>
                   </SheetHeader>
                   <div className="flex flex-col gap-4 pt-6">
+                    <div className="px-4 py-1">
+                      <DevBypassToggle />
+                    </div>
                     {showUpgradeButton && <ProUpgradeButton className="w-full" />}
                     <Link
                       href="/admin"

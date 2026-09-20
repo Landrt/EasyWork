@@ -1,6 +1,7 @@
 'use client';
 
 import { ShieldCheck } from 'lucide-react';
+import { DevBypassToggle } from '@/components/dev/dev-bypass-toggle';
 
 interface AdminHeaderProps {
   title: string;
@@ -17,6 +18,8 @@ export function AdminHeader({ title, subtitle, adminEmail = 'admin@easywork.com'
       </div>
 
       <div className="flex items-center gap-4">
+        <DevBypassToggle />
+
         <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded border border-[#E5E1D8] bg-white text-[11px] text-[#494740] shadow-xs">
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Données Réelles Supabase</span>

@@ -5,6 +5,7 @@ import { Subscription, SubscriptionPlanType, hasActiveProAccess } from '@/lib/ty
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { paddle } from '@/utils/paddle/client';
+import { isDevBypassActive } from '@/utils/dev-bypass';
 
 export interface PaddlePaymentOptions {
   planType?: 'sprint' | 'monthly' | 'lifetime';
@@ -174,7 +175,18 @@ export async function verifyPaddlePayment(transactionId: string, forcedPlan?: Su
 /**
  * Récupère le plan d'abonnement actif de l'utilisateur connecté
  */
-export async function getSubscriptionPlan(returnId?: boolean) {
+export async function getSubscriptionPlan(returnId: true): Promise<{ plan: string; id: string }>;
+export async function getSubscriptionPlan(returnId?: false): Promise<string>;
+export async function getSubscriptionPlan(returnId?: boolean): Promise<string | { plan: string; id: string }> {
+  // Mode Bypass Développeur : Accès 'pro' immédiat et inconditionnel
+  const bypass = await isDevBypassActive();
+  if (bypass) {
+    if (returnId) {
+      return { plan: 'pro' as const, id: 'admin-master' };
+    }
+    return 'pro';
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -188,7 +200,8 @@ export async function getSubscriptionPlan(returnId?: boolean) {
 
       if (data?.subscription_plan) {
         const isActive = hasActiveProAccess(data.subscription_plan, data.current_period_end);
-        const resolvedPlan = isActive ? data.subscription_plan : 'free';
+        // Toutes les actions IA attendent 'pro' pour débloquer les serveurs LLM
+        const resolvedPlan = isActive ? 'pro' : 'free';
 
         if (returnId) {
           return { plan: resolvedPlan, id: user.id };
@@ -201,15 +214,25 @@ export async function getSubscriptionPlan(returnId?: boolean) {
   }
 
   if (returnId) {
-    return { plan: 'sprint', id: 'demo-user-1' };
+    return { plan: 'pro', id: 'demo-user-1' };
   }
-  return 'sprint';
+  return 'pro';
 }
 
 /**
  * Récupère les détails détaillés de l'abonnement
  */
 export async function checkSubscriptionPlan() {
+  if (await isDevBypassActive()) {
+    return {
+      plan: 'lifetime' as SubscriptionPlanType,
+      status: 'active',
+      currentPeriodEnd: '2099-12-31T23:59:59.999Z',
+      isActive: true,
+      isDevBypass: true,
+    };
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -228,6 +251,7 @@ export async function checkSubscriptionPlan() {
           status: data.subscription_status || 'active',
           currentPeriodEnd: data.current_period_end || '',
           isActive,
+          isDevBypass: false,
         };
       }
     }
@@ -236,10 +260,11 @@ export async function checkSubscriptionPlan() {
   }
 
   return {
-    plan: 'sprint',
+    plan: 'sprint' as SubscriptionPlanType,
     status: 'active',
     currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     isActive: true,
+    isDevBypass: false,
   };
 }
 
@@ -247,6 +272,18 @@ export async function checkSubscriptionPlan() {
  * Récupère le statut complet de l'abonnement pour la page /subscription
  */
 export async function getSubscriptionStatus() {
+  if (await isDevBypassActive()) {
+    return {
+      subscription_plan: 'lifetime' as SubscriptionPlanType,
+      subscription_status: 'active',
+      current_period_end: '2099-12-31T23:59:59.999Z',
+      trial_end: null,
+      paddle_subscription_id: 'sub_dev_bypass_lifetime',
+      paddle_transaction_id: 'txn_dev_bypass_lifetime',
+      payment_provider: 'bypass',
+    };
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
