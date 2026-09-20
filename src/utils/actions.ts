@@ -13,114 +13,114 @@ const mockProfile: Profile = {
   id: "landry-mouko-profile",
   user_id: "demo-user-1",
   first_name: "Landry",
-  last_name: "Mouko",
+  last_name: "Youcheu Fondja",
   email: "moukolandry03@gmail.com",
-  phone_number: "+237 6 90 00 00 00",
-  location: "Yaoundé, Cameroun (Disponible mobilité internationale & Remote)",
+  phone_number: "+237 6 81 98 36 85",
+  location: "Yaoundé, Cameroun (Mobilité Internationale & Remote)",
   website: "https://github.com/Landrt",
   linkedin_url: "https://linkedin.com/in/landry-mouko",
   github_url: "https://github.com/Landrt",
   work_experience: [
     {
-      company: "EasyWork & GhostAI (Plateforme d'Innovation Numérique)",
-      position: "Ingénieur Logiciel & IA Full-Stack (Solutions Numériques & DPG)",
+      company: "EasyWork & GhostAI (Plateforme Cloud & IA)",
+      position: "Ingénieur Logiciel Full-Stack & Solutions IA",
       location: "Remote / Yaoundé",
       date: "Jan 2025 - Présent",
       description: [
-        "Architecture et développement d'une plateforme cloud moderne (Next.js 15, React 19, TypeScript, Supabase PostgreSQL RLS) ayant traité plus de 1 200 analyses avec un temps de réponse moyen < 1.5s.",
-        "Implémentation d'algorithmes d'analyse sémantique et d'audit ATS réduisant les points de rejet de 40% grâce à l'intégration des modèles DeepSeek V3 et OpenAI pour l'extraction de compétences.",
-        "Conception d'une infrastructure résiliente à haute disponibilité avec limiteur de débit distribué Leaky-Bucket (Upstash Redis) et sécurisation cryptographique des transactions (99.9% uptime)."
+        "Architecture et déploiement d'une plateforme cloud moderne (Next.js 15, React 19, TypeScript, Supabase PostgreSQL avec RLS), gérant plus de 1 200 sessions d'analyse avec un temps de réponse moyen < 1.5s.",
+        "Conception d'un moteur d'audit sémantique et de conformité ATS propulsé par DeepSeek V3 et OpenAI, réduisant les rejets de profils de 40% grâce à l'extraction automatisée d'entités et recommandations en temps réel.",
+        "Mise en place d'une infrastructure résiliente à haute disponibilité avec limiteur de débit distribué Leaky-Bucket (Upstash Redis) et sécurisation cryptographique des transactions (99.9% uptime)."
       ],
       technologies: ["Next.js 15", "TypeScript", "DeepSeek API", "Supabase", "PostgreSQL", "Upstash Redis", "Tailwind CSS", "CI/CD"]
     },
     {
-      company: "Projets Open-Source & Innovation d'Impact (GitHub Landrt)",
+      company: "Innovation Numérique & Solutions d'Impact",
       position: "Ingénieur Logiciel & Chercheur en Données / IA",
       location: "Yaoundé, Cameroun",
       date: "Jan 2024 - Déc 2024",
       description: [
-        "VeriScope & Veracity-Analyzer : Conception d'un système intelligent NLP de détection de fausses informations ayant analysé plus de 5 000 assertions avec 92% de précision (aligné ODD 16 - Paix, Justice et Institutions efficaces).",
-        "PowerVision & PowerVision-Box : Développement d'une application Flutter et d'une passerelle IoT Kotlin réduisant l'empreinte énergétique de monitoring de 28% sur matériel edge (aligné ODD 7 & 9).",
-        "FingID : Déploiement d'un module d'authentification biométrique et gestion d'identités numériques sécurisées conforme aux standards SDG 16.9 et principes des Biens Publics Numériques."
+        "Conception et maintenance d'un écosystème de plus de 19 dépôts open-source sur GitHub avec intégration continue (CI/CD), tests automatisés et revues de code rigoureuses.",
+        "Recherche appliquée et développement de solutions logicielles d'impact sociétal alignées sur les Objectifs de Développement Durable (ODD 16, 7, 9) et les standards des Biens Publics Numériques.",
+        "Conception de briques logicielles sécurisées et performantes pour le traitement de données ouvertes, la vérification d'informations et l'optimisation énergétique edge."
       ],
-      technologies: ["Python", "NLP", "Machine Learning", "Flutter / Dart", "Kotlin", "C/C++", "Docker", "Git / GitHub Actions"]
+      technologies: ["Python", "NLP", "Machine Learning", "Flutter / Dart", "Kotlin", "C/C++", "Docker", "GitHub Actions"]
     }
   ],
   education: [
     {
-      school: "Faculté des Sciences / École d'Ingénierie Informatique",
+      school: "Faculté des Sciences / Département Informatique",
       degree: "Master / Diplôme d'Ingénieur en Génie Logiciel & Systèmes d'Information",
-      field: "Informatique, Algorithmique Avancée & Systèmes Intelligents",
-      date: "2021 - 2025 (En cours de finalisation - Recherche de stage)",
+      field: "Génie Logiciel & Systèmes Intelligents (En cours de finalisation — Stage fin d'études)",
+      date: "2021 - 2025",
       location: "Yaoundé, Cameroun",
       achievements: [
-        "Excellence académique en algorithmique avancée, structures de données et traitement d'images bas-niveau (C/C++)",
-        "Spécialisation en architectures logicielles distribuées, intelligence artificielle éthique et solutions numériques pour le développement (DPG)"
+        "Spécialisation en architectures logicielles distribuées, intelligence artificielle éthique et Biens Publics Numériques (DPG)",
+        "Excellence académique en algorithmique avancée, structures de données et traitement d'images bas-niveau (C/C++)"
       ]
     }
   ],
   skills: [
     {
-      category: "Langages & Programmation",
+      category: "Langages de Programmation",
       items: ["TypeScript", "JavaScript", "Python", "Dart", "Kotlin", "C/C++", "SQL (PostgreSQL)"]
     },
     {
-      category: "Technologies Web & Cloud",
-      items: ["Next.js 15", "React 19", "Node.js", "Express", "Supabase", "Upstash Redis", "Tailwind CSS", "REST APIs", "Docker", "CI/CD (GitHub Actions)"]
+      category: "Frameworks Web & Cloud",
+      items: ["Next.js 15", "React 19", "Node.js", "Express", "Supabase (RLS)", "Upstash Redis", "Tailwind CSS", "REST APIs", "Docker", "CI/CD (GitHub Actions)"]
     },
     {
       category: "Intelligence Artificielle & Données",
-      items: ["DeepSeek API", "OpenAI API", "Vercel AI SDK", "Prompt Engineering", "NLP & Fact-Checking", "Computer Vision", "Machine Learning", "Data Pipelines"]
+      items: ["DeepSeek API", "OpenAI API", "Vercel AI SDK", "Prompt Engineering", "NLP & Fact-Checking", "Computer Vision", "Machine Learning", "Pipelines de Données"]
     },
     {
-      category: "Compétences Internationales & PNUD",
-      items: ["Objectifs de Développement Durable (ODD)", "Digital Public Goods (Biens Publics Numériques)", "Éthique de l'IA & Données Ouvertes", "Gestion de Projet Agile / Scrum", "Français (Langue maternelle)", "Anglais (Professionnel)"]
+      category: "Standards Onusiens & Méthodologies",
+      items: ["Objectifs de Développement Durable (ODD)", "Biens Publics Numériques (DPG Alliance)", "Éthique de l'IA & Données Ouvertes", "Gestion de Projet Agile / Scrum", "Français (Langue maternelle)", "Anglais (Professionnel)"]
     }
   ],
   projects: [
     {
-      name: "EasyWork - SaaS d'Accompagnement de Carrière par l'IA",
+      name: "VeriScope / Veracity-Analyzer — Détection de Désinformation par NLP",
       description: [
-        "Plateforme complète d'optimisation de CVs et d'adéquation candidat-emploi propulsée par DeepSeek et OpenAI.",
-        "Architecture SaaS multi-tenante sécurisée avec Row Level Security, système de parrainage et conformité RGPD intégrale."
-      ],
-      date: "2025",
-      technologies: ["Next.js", "TypeScript", "DeepSeek", "Supabase", "Tailwind CSS"],
-      url: "https://github.com/Landrt/EasyWork",
-      github_url: "https://github.com/Landrt/EasyWork"
-    },
-    {
-      name: "VeriScope / Veracity-Analyzer - Lutte contre la Désinformation",
-      description: [
-        "Moteur automatisé d'analyse de véracité des informations publiques et vérification de faits par modèles de langage.",
-        "Développement d'heuristiques d'intégrité de données pour la gouvernance numérique transparente (ODD 16)."
+        "Moteur automatisé d'analyse de véracité des informations publiques et vérification de faits par modèles de langage (NLP), directement aligné sur l'ODD 16 (Transparence et intégrité institutionnelle).",
+        "Extraction d'entités nommées et heuristiques d'intégrité de données atteignant 92% de précision sur corpus textuels complexes."
       ],
       date: "2024 - 2025",
-      technologies: ["Python", "NLP", "TypeScript", "AI Verification"],
+      technologies: ["Python", "NLP", "LLM Fact-Checking", "TypeScript", "ODD 16"],
       url: "https://github.com/Landrt/VeriScope",
       github_url: "https://github.com/Landrt/VeriScope"
     },
     {
-      name: "PowerVision - Vision par Ordinateur & IoT Énergétique",
+      name: "PowerVision & PowerVision-Box — Vision par Ordinateur & IoT Énergétique",
       description: [
-        "Application mobile Flutter couplée à une boîte de traitement Kotlin pour l'analyse visuelle et le contrôle d'équipements.",
-        "Optimisation de la consommation énergétique et traitement edge pour environnements à ressources limitées (ODD 7 & 9)."
+        "Application mobile cross-platform Flutter couplée à une passerelle IoT Kotlin pour l'analyse visuelle et le contrôle automatisé d'équipements.",
+        "Traitement edge optimisé pour environnements à ressources limitées, réduisant l'empreinte énergétique de monitoring de 28% (aligné ODD 7 & 9)."
       ],
       date: "2024 - 2025",
-      technologies: ["Flutter", "Dart", "Kotlin", "Computer Vision"],
+      technologies: ["Flutter", "Dart", "Kotlin", "Computer Vision", "Edge AI", "ODD 7 & 9"],
       url: "https://github.com/Landrt/PowerVision",
       github_url: "https://github.com/Landrt/PowerVision"
     },
     {
-      name: "FingID - Système d'Authentification Biométrique",
+      name: "FingID — Authentification Biométrique & Identité Numérique",
       description: [
-        "Architecture d'identification biométrique sécurisée facilitant l'accès aux services numériques sans dépendance aux identifiants papier.",
-        "Conforme aux principes d'inclusion numérique et de protection des données personnelles (ODD 16.9)."
+        "Brique logicielle d'authentification biométrique et de gestion sécurisée des identités numériques sans dépendance aux identifiants papier.",
+        "Conception conforme aux principes d'inclusion citoyenne et de protection des données personnelles de la Digital Public Goods Alliance (ODD 16.9)."
       ],
       date: "2024 - 2025",
-      technologies: ["TypeScript", "Biometrics", "Security", "REST API"],
+      technologies: ["TypeScript", "Biométrie", "Sécurité", "REST API", "ODD 16.9"],
       url: "https://github.com/Landrt/FingID",
       github_url: "https://github.com/Landrt/FingID"
+    },
+    {
+      name: "PPM Image Processing Engine — Traitement d'Images & Algorithmique C/C++",
+      description: [
+        "Développement d'un moteur haute performance de manipulation et filtrage d'images matricielles au format PPM en C pur.",
+        "Gestion mémoire rigoureuse sans fuite (Valgrind), convolution d'images et manipulation de pointeurs bas-niveau."
+      ],
+      date: "2023 - 2024",
+      technologies: ["C", "C++", "Algorithmique Avancée", "Valgrind", "Traitement de Signal"],
+      url: "https://github.com/Landrt/TP231",
+      github_url: "https://github.com/Landrt/TP231"
     }
   ],
   created_at: new Date().toISOString(),
@@ -131,12 +131,12 @@ const mockBaseResume: Resume = {
   id: "landry-mouko-base-resume",
   user_id: "demo-user-1",
   name: "CV Principal - Landry Mouko (Ingénieur Logiciel & IA)",
-  target_role: "Stagiaire Solutions Numériques & Ingénierie Logicielle / Digital Innovation Intern",
+  target_role: "Ingénieur Logiciel & Intelligence Artificielle | Solutions Numériques d'Impact",
   is_base_resume: true,
   first_name: "Landry",
-  last_name: "Mouko",
+  last_name: "Youcheu Fondja",
   email: "moukolandry03@gmail.com",
-  phone_number: "+237 6 90 00 00 00",
+  phone_number: "+237 6 81 98 36 85",
   location: "Yaoundé, Cameroun (Mobilité Internationale & Remote)",
   website: "https://github.com/Landrt",
   linkedin_url: "https://linkedin.com/in/landry-mouko",
@@ -149,28 +149,28 @@ const mockBaseResume: Resume = {
   updated_at: new Date().toISOString(),
   has_cover_letter: true,
   document_settings: {
-    document_font_size: 10,
-    document_line_height: 1.35,
-    document_margin_vertical: 28,
-    document_margin_horizontal: 28,
-    header_name_size: 22,
-    header_name_bottom_spacing: 8,
-    skills_margin_top: 8,
-    skills_margin_bottom: 8,
-    skills_margin_horizontal: 0,
-    skills_item_spacing: 4,
-    experience_margin_top: 8,
-    experience_margin_bottom: 8,
+    document_font_size: 9.5,
+    document_line_height: 1.3,
+    document_margin_vertical: 24,
+    document_margin_horizontal: 24,
+    header_name_size: 20,
+    header_name_bottom_spacing: 4,
+    experience_margin_top: 4,
+    experience_margin_bottom: 4,
     experience_margin_horizontal: 0,
-    experience_item_spacing: 6,
-    projects_margin_top: 8,
-    projects_margin_bottom: 8,
+    experience_item_spacing: 4,
+    projects_margin_top: 4,
+    projects_margin_bottom: 4,
     projects_margin_horizontal: 0,
-    projects_item_spacing: 6,
-    education_margin_top: 8,
-    education_margin_bottom: 8,
+    projects_item_spacing: 4,
+    skills_margin_top: 4,
+    skills_margin_bottom: 4,
+    skills_margin_horizontal: 0,
+    skills_item_spacing: 2,
+    education_margin_top: 4,
+    education_margin_bottom: 4,
     education_margin_horizontal: 0,
-    education_item_spacing: 6
+    education_item_spacing: 2
   }
 };
 

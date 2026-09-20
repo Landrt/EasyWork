@@ -66,14 +66,20 @@ const HeaderSection = memo(function HeaderSection({
   resume: Resume; 
   styles: ReturnType<typeof createResumeStyles>;
 }) {
+  const showWebsite = resume.website && resume.website !== resume.github_url;
+  const cleanLink = (url: string) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+
   return (
     <View style={styles.header}>
       <Text style={styles.name}>{resume.first_name} {resume.last_name}</Text>
+      {resume.target_role && (
+        <Text style={styles.titleRole}>{resume.target_role}</Text>
+      )}
       <View style={styles.contactInfo}>
         {resume.location && (
           <>
             <Text>{resume.location}</Text>
-            {(resume.email || resume.phone_number || resume.website || resume.linkedin_url || resume.github_url) && (
+            {(resume.email || resume.phone_number || showWebsite || resume.linkedin_url || resume.github_url) && (
               <Text style={styles.bulletSeparator}>•</Text>
             )}
           </>
@@ -81,7 +87,7 @@ const HeaderSection = memo(function HeaderSection({
         {resume.email && (
           <>
             <Link src={`mailto:${resume.email}`}><Text style={styles.link}>{resume.email}</Text></Link>
-            {(resume.phone_number || resume.website || resume.linkedin_url || resume.github_url) && (
+            {(resume.phone_number || showWebsite || resume.linkedin_url || resume.github_url) && (
               <Text style={styles.bulletSeparator}>•</Text>
             )}
           </>
@@ -89,17 +95,7 @@ const HeaderSection = memo(function HeaderSection({
         {resume.phone_number && (
           <>
             <Text>{resume.phone_number}</Text>
-            {(resume.website || resume.linkedin_url || resume.github_url) && (
-              <Text style={styles.bulletSeparator}>•</Text>
-            )}
-          </>
-        )}
-        {resume.website && (
-          <>
-            <Link src={resume.website.startsWith('http') ? resume.website : `https://${resume.website}`}>
-              <Text style={styles.link}>{resume.website}</Text>
-            </Link>
-            {(resume.linkedin_url || resume.github_url) && (
+            {(showWebsite || resume.linkedin_url || resume.github_url) && (
               <Text style={styles.bulletSeparator}>•</Text>
             )}
           </>
@@ -107,14 +103,24 @@ const HeaderSection = memo(function HeaderSection({
         {resume.linkedin_url && (
           <>
             <Link src={resume.linkedin_url.startsWith('http') ? resume.linkedin_url : `https://${resume.linkedin_url}`}>
-              <Text style={styles.link}>{resume.linkedin_url}</Text>
+              <Text style={styles.link}>{cleanLink(resume.linkedin_url)}</Text>
             </Link>
-            {resume.github_url && <Text style={styles.bulletSeparator}>•</Text>}
+            {(showWebsite || resume.github_url) && (
+              <Text style={styles.bulletSeparator}>•</Text>
+            )}
           </>
         )}
         {resume.github_url && (
-          <Link src={resume.github_url.startsWith('http') ? resume.github_url : `https://${resume.github_url}`}>
-            <Text style={styles.link}>{resume.github_url}</Text>
+          <>
+            <Link src={resume.github_url.startsWith('http') ? resume.github_url : `https://${resume.github_url}`}>
+              <Text style={styles.link}>{cleanLink(resume.github_url)}</Text>
+            </Link>
+            {showWebsite && <Text style={styles.bulletSeparator}>•</Text>}
+          </>
+        )}
+        {showWebsite && (
+          <Link src={resume.website!.startsWith('http') ? resume.website! : `https://${resume.website}`}>
+            <Text style={styles.link}>{cleanLink(resume.website!)}</Text>
           </Link>
         )}
       </View>
@@ -162,7 +168,7 @@ const ExperienceSection = memo(function ExperienceSection({
       {experiences.map((experience, index) => (
         <View key={index} style={styles.experienceItem}>
           <View style={styles.experienceHeader}>
-            <View>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.companyName}>{processText(experience.position, true)}</Text>
               <Text style={styles.jobTitle}>{processText(experience.company, true)}</Text>
             </View>
@@ -208,13 +214,13 @@ const ProjectsSection = memo(function ProjectsSection({
                   <Text style={styles.projectLinks}>
                     {project.url && (
                       <Link src={project.url.startsWith('http') ? project.url : `https://${project.url}`}>
-                        <Text style={styles.link}>{project.url}</Text>
+                        <Text style={styles.link}>{project.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</Text>
                       </Link>
                     )}
-                    {project.url && project.github_url && ' | '}
-                    {project.github_url && (
+                    {project.url && project.github_url && project.url !== project.github_url && ' | '}
+                    {project.github_url && project.url !== project.github_url && (
                       <Link src={project.github_url.startsWith('http') ? project.github_url : `https://${project.github_url}`}>
-                        <Text style={styles.link}>{project.github_url}</Text>
+                        <Text style={styles.link}>{project.github_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</Text>
                       </Link>
                     )}
                   </Text>
@@ -260,9 +266,9 @@ const EducationSection = memo(function EducationSection({
       {education.map((edu, index) => (
         <View key={index} style={styles.educationItem}>
           <View style={styles.educationHeader}>
-            <View>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.schoolName}>{processText(edu.school, true)}</Text>
-              <Text style={styles.degree}>{processText(`${edu.degree} ${edu.field}`)}</Text>
+              <Text style={styles.degree}>{processText(`${edu.degree} — ${edu.field}`)}</Text>
             </View>
             <Text style={styles.dateRange}>{edu.date}</Text>
           </View>
@@ -349,30 +355,48 @@ function createResumeStyles(settings: Resume['document_settings'] = {
     },
     header: {
       alignItems: 'center',
+      width: '100%',
+      marginBottom: header_name_bottom_spacing > 10 ? 10 : header_name_bottom_spacing,
     },
     name: {
       fontSize: header_name_size,
       fontFamily: 'Helvetica-Bold',
-      marginBottom: header_name_bottom_spacing,
+      paddingBottom: 4,
+      marginBottom: 4,
       color: '#111827',
       textAlign: 'center',
+      letterSpacing: 0.5,
+    },
+    titleRole: {
+      fontSize: document_font_size + 0.5,
+      fontFamily: 'Helvetica-Bold',
+      color: '#374151',
+      letterSpacing: 0.8,
+      textAlign: 'center',
+      paddingTop: 2,
+      paddingBottom: 4,
+      marginBottom: 6,
+      textTransform: 'uppercase',
     },
     contactInfo: {
-      fontSize: document_font_size,
-      color: '#374151',
+      fontSize: document_font_size - 0.5,
+      color: '#4b5563',
       flexDirection: 'row',
       justifyContent: 'center',
+      alignItems: 'center',
       flexWrap: 'wrap',
       gap: 4,
     },
     sectionTitle: {
-      fontSize: document_font_size,
+      fontSize: document_font_size + 0.5,
       fontFamily: 'Helvetica-Bold',
-      marginBottom: 4,
+      marginBottom: 5,
+      marginTop: 4,
       color: '#111827',
       textTransform: 'uppercase',
-      borderBottom: '0.5pt solid #e5e7eb',
-      paddingBottom: 0,
+      letterSpacing: 0.5,
+      borderBottom: '1pt solid #111827',
+      paddingBottom: 2,
     },
     // Skills section
     skillsSection: {
@@ -551,9 +575,9 @@ export const ResumePDFDocument = memo(function ResumePDFDocument({ resume }: Res
     <PDFDocument>
       <PDFPage size="LETTER" style={styles.page}>
         <HeaderSection resume={resume} styles={styles} />
-        <SkillsSection skills={resume.skills} styles={styles} />
         <ExperienceSection experiences={resume.work_experience} styles={styles} />
         <ProjectsSection projects={resume.projects} styles={styles} />
+        <SkillsSection skills={resume.skills} styles={styles} />
         <EducationSection education={resume.education} styles={styles} />
         
         {resume.document_settings?.show_ubc_footer && (
